@@ -1,5 +1,46 @@
 package cpu
 
+func (c *CPU) initArithmetic() {
+	instrs := map[byte]Instr{
+		0x69: {
+			cycles:    2,
+			immediate: c.adc,
+		},
+		0x65: {
+			cycles:   3,
+			zeroPage: c.adc,
+		},
+		0x75: {
+			cycles:    4,
+			zeroPageX: c.adc,
+		},
+		0x6D: {
+			cycles:   4,
+			absolute: c.adc,
+		},
+		0x7D: {
+			cycles:    4,
+			absoluteX: c.adc,
+		},
+		0x79: {
+			cycles:    4,
+			absoluteY: c.adc,
+		},
+		0x61: {
+			cycles:    6,
+			indirectX: c.adc,
+		},
+		0x71: {
+			cycles:    5,
+			indirectY: c.adc,
+		},
+	}
+
+	for code, instr := range instrs {
+		c.opCodes[code] = instr
+	}
+}
+
 // TODO: carry flag, page boundary
 func (c *CPU) adc(v byte) (byte, bool) {
 	if c.flagSet(FlagC) {

@@ -2,6 +2,7 @@ package ram
 
 const size = 100
 
+// Stack is $0100 - $01FF
 type RAM struct {
 	data [size]byte
 }

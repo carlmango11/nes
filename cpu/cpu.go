@@ -32,11 +32,16 @@ type CPU struct {
 func New(ram *ram.RAM) *CPU {
 	c := &CPU{
 		ram: ram,
+		s:   0xFF, // starts at top
 	}
 
 	c.initInstrs()
 
 	return c
+}
+
+func (c *CPU) initInstrs() {
+	c.initArithmetic()
 }
 
 func (c *CPU) exec() {
@@ -45,6 +50,9 @@ func (c *CPU) exec() {
 	switch {
 	case instr.accumulator != nil:
 		c.execAccumulator(instr.accumulator)
+
+	case instr.implied != nil:
+		c.execImplied(instr.implied)
 
 	case instr.immediate != nil:
 		c.execImmediate(instr.immediate)
@@ -55,14 +63,23 @@ func (c *CPU) exec() {
 	case instr.zeroPageX != nil:
 		c.execZeroPageX(instr.zeroPageX)
 
+	case instr.zeroPageY != nil:
+		c.execZeroPageY(instr.zeroPageY)
+
 	case instr.absolute != nil:
 		c.execAbsolute(instr.absolute)
+
+	case instr.absoluteAddr != nil:
+		c.execAbsoluteAddr(instr.absoluteAddr)
 
 	case instr.absoluteX != nil:
 		c.execAbsoluteX(instr.absoluteX)
 
 	case instr.absoluteY != nil:
 		c.execAbsoluteY(instr.absoluteY)
+
+	case instr.indirect != nil:
+		c.execIndirect(instr.indirect)
 
 	case instr.indirectX != nil:
 		c.execIndirectX(instr.indirectX)
@@ -99,6 +116,10 @@ func (c *CPU) execFlagChange(fc *flagChange) {
 	}
 }
 
+func (c *CPU) execImplied(f impliedHandler) {
+	f()
+}
+
 func (c *CPU) execAccumulator(f handler) {
 	c.a, _ = f(c.read())
 }
@@ -118,7 +139,15 @@ func (c *CPU) execZeroPage(f handler) {
 }
 
 func (c *CPU) execZeroPageX(f handler) {
-	addr := uint16(c.read()+c.x) % 255
+	c.execZeroPageGeneric(f, c.x)
+}
+
+func (c *CPU) execZeroPageY(f handler) {
+	c.execZeroPageGeneric(f, c.y)
+}
+
+func (c *CPU) execZeroPageGeneric(f handler, register byte) {
+	addr := uint16(c.read()+register) % 255
 
 	newVal, write := f(c.ram.Read(addr))
 
@@ -137,6 +166,30 @@ func (c *CPU) execAbsoluteX(f handler) {
 
 func (c *CPU) execAbsoluteY(f handler) {
 	c.execAbsoluteGeneric(f, c.y)
+}
+
+func (c *CPU) execIndirect(f addrHandler) {
+	lo := uint16(c.read())
+	hi := uint16(c.read())
+
+	addr := hi << 8
+	addr |= lo
+
+	lo = uint16(c.ram.Read(addr))
+	hi = uint16(c.ram.Read(addr + 1))
+
+	addr = hi << 8
+	addr |= lo
+
+	f(addr)
+}
+
+func (c *CPU) readAddr() uint16 {
+	lo := uint16(c.read())
+	hi := uint16(c.read())
+
+	addr := hi << 8
+	return addr | lo
 }
 
 func (c *CPU) execIndirectX(f handler) {
@@ -177,19 +230,18 @@ func (c *CPU) execIndirectGeneric(f handler, addition byte) {
 	f(c.ram.Read(finalAddr))
 }
 
+func (c *CPU) execAbsoluteAddr(f addrHandler) {
+	f(c.readAddr())
+}
+
 func (c *CPU) execAbsoluteGeneric(f handler, addition byte) {
-	lo := uint16(c.read())
-	hi := uint16(c.read())
+	addr := c.readAddr()
+	addr += uint16(addition)
 
-	hi <<= 8
-	hi |= lo
-
-	hi += uint16(addition)
-
-	newVal, write := f(c.ram.Read(hi))
+	newVal, write := f(c.ram.Read(addr))
 
 	if write {
-		c.ram.Write(hi, newVal)
+		c.ram.Write(addr, newVal)
 	}
 }
 
@@ -225,6 +277,10 @@ func (c *CPU) setNZ(v byte) {
 
 func (c *CPU) setNZFromA() {
 	c.setNZ(c.a)
+}
+
+func (c *CPU) stackAddr() uint16 {
+	return 0x0100 | uint16(c.s)
 }
 
 func fromBCD(v byte) byte {
