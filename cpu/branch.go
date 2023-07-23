@@ -1,5 +1,23 @@
 package cpu
 
+func (c *CPU) initBranch() {
+	instrs := map[byte]Instr{
+		// Branch
+		0x10: {relative: c.bpl},
+		0x30: {relative: c.bmi},
+		0x50: {relative: c.bvc},
+		0x70: {relative: c.bvs},
+		0x90: {relative: c.bcc},
+		0xB0: {relative: c.bcs},
+		0xD0: {relative: c.bne},
+		0xF0: {relative: c.beq},
+	}
+
+	for code, instr := range instrs {
+		c.opCodes[code] = instr
+	}
+}
+
 func (c *CPU) bpl() bool {
 	return !c.flagSet(FlagN)
 }

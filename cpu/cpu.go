@@ -4,6 +4,37 @@ import (
 	"Nes/ram"
 )
 
+type handler func(v byte) (byte, bool)
+type impliedHandler func()
+type addrHandler func(addr uint16)
+type condition func() bool
+
+type flagChange struct {
+	flag Flag
+	set  bool
+}
+
+type Instr struct {
+	cycles int
+
+	implied      impliedHandler
+	accumulator  handler
+	immediate    handler
+	zeroPage     handler
+	zeroPageX    handler
+	zeroPageY    handler
+	absolute     handler
+	absoluteAddr addrHandler // when an address is required
+	absoluteX    handler
+	absoluteY    handler
+	indirect     addrHandler
+	indirectX    handler
+	indirectY    handler
+	relative     condition
+
+	flagChange *flagChange
+}
+
 type Flag byte
 
 const (
@@ -17,16 +48,11 @@ const (
 )
 
 type CPU struct {
-	pc uint16
-	s  byte
-	p  byte
-	a  byte
-	x  byte
-	y  byte
-
 	opCodes map[byte]Instr
+	ram     *ram.RAM
 
-	ram *ram.RAM
+	pc            uint16
+	s, p, a, x, y byte
 }
 
 func New(ram *ram.RAM) *CPU {
@@ -41,7 +67,10 @@ func New(ram *ram.RAM) *CPU {
 }
 
 func (c *CPU) initInstrs() {
+	c.initTransfer()
+	c.initStack()
 	c.initArithmetic()
+	c.initNop()
 }
 
 func (c *CPU) exec() {
