@@ -2,6 +2,7 @@ package cpu
 
 import (
 	"Nes/ram"
+	"fmt"
 )
 
 type handler func(v byte) (byte, bool)
@@ -15,6 +16,7 @@ type flagChange struct {
 }
 
 type Instr struct {
+	name   string
 	cycles int
 
 	implied      impliedHandler
@@ -53,12 +55,15 @@ type CPU struct {
 
 	pc            uint16
 	s, p, a, x, y byte
+	c             int
 }
 
-func New(ram *ram.RAM) *CPU {
+func New(ram *ram.RAM, pc uint16) *CPU {
 	c := &CPU{
-		ram: ram,
-		s:   0xFF, // starts at top
+		ram:     ram,
+		opCodes: map[byte]Instr{},
+		s:       0xFF, // starts at top
+		pc:      pc,
 	}
 
 	c.initInstrs()
@@ -67,14 +72,35 @@ func New(ram *ram.RAM) *CPU {
 }
 
 func (c *CPU) initInstrs() {
+	c.initLoad()
 	c.initTransfer()
 	c.initStack()
+	c.initShift()
+	c.initLogic()
 	c.initArithmetic()
+	c.initIncrement()
+	c.initCtrl()
+	c.initBranch()
+	c.initFlags()
 	c.initNop()
 }
 
-func (c *CPU) exec() {
-	instr := c.opCodes[c.read()]
+func (c *CPU) PrintState() {
+	fmt.Printf("\nC: %v\ta:%x x:%x y:%x s:%x pc:%x", c.c, c.a, c.x, c.y, c.s, c.pc)
+	fmt.Printf("\nN: %t V: %t B: %t D: %t I: %t Z: %t C: %t",
+		c.flagSet(FlagN), c.flagSet(FlagV), c.flagSet(FlagB), c.flagSet(FlagD),
+		c.flagSet(FlagI), c.flagSet(FlagZ), c.flagSet(FlagC))
+}
+
+func (c *CPU) Exec() {
+	code := c.read()
+
+	instr, ok := c.opCodes[code]
+	if !ok {
+		panic(fmt.Sprintf("unknown opcode %x", code))
+	}
+
+	fmt.Printf("\ninstr %v - %x", instr.name, code)
 
 	switch {
 	case instr.accumulator != nil:
@@ -124,6 +150,8 @@ func (c *CPU) exec() {
 	}
 
 	c.addCycles(instr.cycles)
+
+	c.c++
 }
 
 func (c *CPU) addCycles(count int) {
@@ -230,14 +258,16 @@ func (c *CPU) execIndirectY(f handler) {
 }
 
 func (c *CPU) execRelative(cond condition) {
-	offset := c.read()
+	offset := int8(c.read()) // offset is signed
 
 	var cycles int
 
 	if cond() {
-		c.pc += uint16(offset)
+		fmt.Printf("\nbranching: %v", offset)
+		c.pc = uint16(int16(c.pc) + int16(offset))
 		cycles = 1
 	} else {
+		fmt.Printf("\nnot branching")
 		cycles = 2
 	}
 
@@ -254,7 +284,7 @@ func (c *CPU) execIndirectGeneric(f handler, addition byte) {
 	lo := c.ram.Read(addr)
 	hi := c.ram.Read(addr + 1)
 
-	finalAddr := (uint16(hi) << 8) | uint16(lo)
+	finalAddr := toAddr(hi, lo)
 
 	f(c.ram.Read(finalAddr))
 }
@@ -301,7 +331,7 @@ func (c *CPU) flagSet(index Flag) bool {
 
 func (c *CPU) setNZ(v byte) {
 	c.setFlagTo(FlagZ, v == 0)
-	c.setFlagTo(FlagN, int16(v) < 0)
+	c.setFlagTo(FlagN, isNeg(v))
 }
 
 func (c *CPU) setNZFromA() {
@@ -310,6 +340,18 @@ func (c *CPU) setNZFromA() {
 
 func (c *CPU) stackAddr() uint16 {
 	return 0x0100 | uint16(c.s)
+}
+
+func (c *CPU) pushStack(v byte) {
+	c.ram.Write(c.stackAddr(), v)
+	c.s--
+}
+
+func (c *CPU) popStack() byte {
+	v := c.ram.Read(c.stackAddr())
+	c.s++
+
+	return v
 }
 
 func fromBCD(v byte) byte {
@@ -322,4 +364,9 @@ func toBCD(v byte) byte {
 	res <<= 4
 
 	return res | v%10
+}
+
+func toAddr(hi, lo byte) uint16 {
+	addr := uint16(hi) << 8
+	return addr | uint16(lo)
 }

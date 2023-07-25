@@ -24,6 +24,28 @@ func (c *CPU) initShift() {
 			absoluteX: c.asl,
 		},
 
+		// LSR
+		0x4A: {
+			cycles:      2,
+			accumulator: c.lsr,
+		},
+		0x4E: {
+			cycles:   6,
+			absolute: c.lsr,
+		},
+		0x5E: {
+			cycles:    7,
+			absoluteX: c.lsr,
+		},
+		0x46: {
+			cycles:   5,
+			zeroPage: c.lsr,
+		},
+		0x56: {
+			cycles:    6,
+			zeroPageX: c.lsr,
+		},
+
 		// ROR
 		0x6A: {
 			cycles:      2,
@@ -72,6 +94,13 @@ func (c *CPU) initShift() {
 	for code, instr := range instrs {
 		c.opCodes[code] = instr
 	}
+}
+
+func (c *CPU) lsr(v byte) (byte, bool) {
+	v >>= 1
+
+	c.setNZ(v)
+	return v, true
 }
 
 func (c *CPU) asl(v byte) (byte, bool) {

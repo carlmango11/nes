@@ -1,6 +1,10 @@
 package ram
 
-const size = 100
+import (
+	"fmt"
+)
+
+const size = 100000000
 
 // Stack is $0100 - $01FF
 type RAM struct {
@@ -14,9 +18,19 @@ func New() *RAM {
 }
 
 func (r *RAM) Read(addr uint16) byte {
-	return r.data[addr]
+	v := r.data[addr]
+	fmt.Printf("\nram: read %x from %x", v, addr)
+
+	return v
 }
 
 func (r *RAM) Write(addr uint16, v byte) {
+	fmt.Printf("\nram: write %x to %x", v, addr)
 	r.data[addr] = v
+}
+
+func (r *RAM) Load(bytes []byte) {
+	for i, v := range bytes {
+		r.data[i] = v
+	}
 }

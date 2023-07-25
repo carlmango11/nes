@@ -39,6 +39,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0xD8: {
+			name:   "CLD",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagD,

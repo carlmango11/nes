@@ -36,6 +36,74 @@ func (c *CPU) initLogic() {
 			indirectY: c.and,
 		},
 
+		// EOR
+		0x49: {
+			cycles:    2,
+			immediate: c.ora,
+		},
+		0x4D: {
+			cycles:   4,
+			absolute: c.ora,
+		},
+		0x5D: {
+			cycles:    4,
+			absoluteX: c.ora,
+		},
+		0x59: {
+			cycles:    4,
+			absoluteY: c.ora,
+		},
+		0x45: {
+			cycles:   3,
+			zeroPage: c.ora,
+		},
+		0x55: {
+			cycles:    4,
+			zeroPageX: c.ora,
+		},
+		0x41: {
+			cycles:    6,
+			indirectX: c.ora,
+		},
+		0x51: {
+			cycles:    5,
+			indirectY: c.ora,
+		},
+
+		// ORA
+		0x09: {
+			cycles:    2,
+			immediate: c.ora,
+		},
+		0x0D: {
+			cycles:   4,
+			absolute: c.ora,
+		},
+		0x1D: {
+			cycles:    4,
+			absoluteX: c.ora,
+		},
+		0x19: {
+			cycles:    4,
+			absoluteY: c.ora,
+		},
+		0x05: {
+			cycles:   3,
+			zeroPage: c.ora,
+		},
+		0x15: {
+			cycles:    4,
+			zeroPageX: c.ora,
+		},
+		0x01: {
+			cycles:    6,
+			indirectX: c.ora,
+		},
+		0x11: {
+			cycles:    5,
+			indirectY: c.ora,
+		},
+
 		// BIT
 		0x24: {
 			cycles:   2,
@@ -54,6 +122,20 @@ func (c *CPU) initLogic() {
 
 func (c *CPU) and(v byte) (byte, bool) {
 	c.a &= v
+
+	c.setNZFromA()
+	return 0, false
+}
+
+func (c *CPU) ora(v byte) (byte, bool) {
+	c.a |= v
+
+	c.setNZFromA()
+	return 0, false
+}
+
+func (c *CPU) eor(v byte) (byte, bool) {
+	c.a ^= v
 
 	c.setNZFromA()
 	return 0, false

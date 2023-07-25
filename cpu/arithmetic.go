@@ -1,5 +1,9 @@
 package cpu
 
+import "log"
+
+const clockSpeedHz = 1660000
+
 func (c *CPU) initArithmetic() {
 	instrs := map[byte]Instr{
 		0x69: {
@@ -34,6 +38,40 @@ func (c *CPU) initArithmetic() {
 			cycles:    5,
 			indirectY: c.adc,
 		},
+
+		// CMP
+		0xC9: {
+			cycles:    2,
+			immediate: c.cmp,
+		},
+		0xC5: {
+			cycles:   3,
+			zeroPage: c.cmp,
+		},
+		0xD5: {
+			cycles:    4,
+			zeroPageX: c.cmp,
+		},
+		0xCD: {
+			cycles:   4,
+			absolute: c.cmp,
+		},
+		0xDD: {
+			cycles:    4,
+			absoluteX: c.cmp,
+		},
+		0xD9: {
+			cycles:    4,
+			absoluteY: c.cmp,
+		},
+		0xC1: {
+			cycles:    6,
+			indirectX: c.cmp,
+		},
+		0xD1: {
+			cycles:    5,
+			indirectY: c.cmp,
+		},
 	}
 
 	for code, instr := range instrs {
@@ -41,42 +79,109 @@ func (c *CPU) initArithmetic() {
 	}
 }
 
+func (c *CPU) cmp(v byte) (byte, bool) {
+	return c.compareGeneric(c.a, v)
+}
+
+func (c *CPU) cpx(v byte) (byte, bool) {
+	return c.compareGeneric(c.x, v)
+}
+
+func (c *CPU) cpy(v byte) (byte, bool) {
+	return c.compareGeneric(c.y, v)
+}
+
+func (c *CPU) compareGeneric(register byte, memory byte) (byte, bool) {
+	c.setFlagTo(FlagC, register >= memory)
+	c.setFlagTo(FlagZ, register == memory)
+	c.setFlagTo(FlagN, isNeg(register-memory))
+
+	return 0, false
+}
+
 // TODO: carry flag, page boundary
-func (c *CPU) adc(v byte) (byte, bool) {
-	if c.flagSet(FlagC) {
-		v++
-	}
+func (c *CPU) sbc(v byte) (byte, bool) {
+	hadBorrow := c.flagSet(FlagB)
 
 	if c.flagSet(FlagD) {
-		c.addDecimal(v)
+		//c.subDecimal(v, hadBorrow)
+		log.Panicf("tried to use decimal sbc: %v", v)
 	} else {
-		c.addBinary(v)
+		c.subBinary(v, hadBorrow)
 	}
 
 	c.setNZFromA()
 	return 0, false
 }
 
-func (c *CPU) addDecimal(v byte) {
-	result := fromBCD(c.a) + fromBCD(v)
+// TODO: carry flag, page boundary
+func (c *CPU) adc(v byte) (byte, bool) {
+	hadCarry := c.flagSet(FlagC)
 
-	if result > 99 {
-		result %= 100
-		c.setFlag(FlagC)
+	if c.flagSet(FlagD) {
+		//c.addDecimal(v, hadCarry)
+		log.Panicf("tried to use decimal adc: %v", v)
 	} else {
-		c.clearFlag(FlagC)
+		c.addBinary(v, hadCarry)
 	}
 
-	c.a = toBCD(result)
+	c.setNZFromA()
+	return 0, false
 }
 
-func (c *CPU) addBinary(v byte) {
-	positive := int16(c.a) >= 0
+//func (c *CPU) addDecimal(v byte, hadCarry bool) {
+//	result := fromBCD(c.a) + fromBCD(v)
+//
+//	if hadCarry {
+//		result++
+//	}
+//
+//	if result > 99 {
+//		result %= 100
+//		c.setFlag(FlagC)
+//	} else {
+//		c.clearFlag(FlagC)
+//	}
+//
+//	c.a = toBCD(result)
+//}
+
+func (c *CPU) addBinary(v byte, hadCarry bool) {
+	wasNeg := isNeg(c.a)
 
 	c.setFlagTo(FlagC, uint16(c.a)+uint16(v) > 255)
 
 	c.a += v
 
-	signChanged := positive != (int16(c.a) >= 0)
-	c.setFlagTo(FlagV, signChanged)
+	if hadCarry {
+		c.a++
+	}
+
+	c.setFlagTo(FlagV, wasNeg != isNeg(c.a)) // TODO: wrong
+}
+
+//func (c *CPU) subDecimal(v byte, hadBorrow bool) {
+//	result := fromBCD(c.a) + fromBCD(v)
+//
+//	if result > 99 {
+//		result %= 100
+//		c.setFlag(FlagC)
+//	} else {
+//		c.clearFlag(FlagC)
+//	}
+//
+//	c.a = toBCD(result)
+//}
+
+func (c *CPU) subBinary(v byte, hadBorrow bool) {
+	c.a -= v
+
+	if hadBorrow {
+		c.a--
+	}
+}
+
+func isNeg(v byte) bool {
+	v &= 0x80
+	return (v >> 7) == 0x01
 }

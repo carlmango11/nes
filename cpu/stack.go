@@ -3,19 +3,23 @@ package cpu
 func (c *CPU) initStack() {
 	instrs := map[byte]Instr{
 		0x48: {
+			name:    "PHA",
 			cycles:  3,
 			implied: c.pha,
 		},
 		0x08: {
+			name:    "PHP",
 			cycles:  3,
 			implied: c.php,
 		},
 		0x68: {
-			cycles:  3,
+			name:    "PLA",
+			cycles:  4,
 			implied: c.pla,
 		},
 		0x28: {
-			cycles:  3,
+			name:    "PLP",
+			cycles:  4,
 			implied: c.plp,
 		},
 	}
@@ -26,22 +30,17 @@ func (c *CPU) initStack() {
 }
 
 func (c *CPU) pha() {
-	c.ram.Write(c.stackAddr(), c.a)
-	c.s--
+	c.pushStack(c.a)
 }
 
 func (c *CPU) php() {
-	c.ram.Write(c.stackAddr(), c.p)
-	c.s--
+	c.pushStack(c.p)
 }
 
-// TODO: whaaaat
 func (c *CPU) pla() {
-	c.ram.Read(c.stackAddr())
-	c.s--
+	c.a = c.popStack()
 }
 
 func (c *CPU) plp() {
-	c.p = c.ram.Read(c.stackAddr())
-	c.s++
+	c.p = c.popStack()
 }

@@ -3,14 +3,14 @@ package cpu
 func (c *CPU) initBranch() {
 	instrs := map[byte]Instr{
 		// Branch
-		0x10: {relative: c.bpl},
-		0x30: {relative: c.bmi},
-		0x50: {relative: c.bvc},
-		0x70: {relative: c.bvs},
-		0x90: {relative: c.bcc},
-		0xB0: {relative: c.bcs},
-		0xD0: {relative: c.bne},
-		0xF0: {relative: c.beq},
+		0x10: {name: "BPL", relative: c.bpl},
+		0x30: {name: "BMI", relative: c.bmi},
+		0x50: {name: "BVC", relative: c.bvc},
+		0x70: {name: "BVS", relative: c.bvs},
+		0x90: {name: "BCC", relative: c.bcc},
+		0xB0: {name: "BCS", relative: c.bcs},
+		0xD0: {name: "BNE", relative: c.bne},
+		0xF0: {name: "BEQ", relative: c.beq},
 	}
 
 	for code, instr := range instrs {

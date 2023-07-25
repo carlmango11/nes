@@ -21,7 +21,7 @@ func TestBCD(t *testing.T) {
 }
 
 func TestSetFlags(t *testing.T) {
-	c := New(nil)
+	c := New(nil, 0)
 	c.p = 0b10101010
 
 	c.setFlag(FlagC)
@@ -46,23 +46,23 @@ func TestFlagInstructions(t *testing.T) {
 	r.Write(0x04, 0x58) // clear interrupt
 	r.Write(0x05, 0xD8) // clear decimal
 
-	c := New(r)
+	c := New(r, 0)
 
-	c.exec()
+	c.Exec()
 	assert.True(t, c.flagSet(FlagC))
 
-	c.exec()
+	c.Exec()
 	assert.True(t, c.flagSet(FlagI))
 
-	c.exec()
+	c.Exec()
 	assert.True(t, c.flagSet(FlagD))
 
-	c.exec()
+	c.Exec()
 	assert.False(t, c.flagSet(FlagC))
 
-	c.exec()
+	c.Exec()
 	assert.False(t, c.flagSet(FlagI))
 
-	c.exec()
+	c.Exec()
 	assert.False(t, c.flagSet(FlagD))
 }
