@@ -7,30 +7,36 @@ import (
 func (c *CPU) initCtrl() {
 	instrs := map[byte]Instr{
 		0x00: {
-			cycles:  7,
-			implied: c.brk,
+			cycles:         7,
+			impliedHandler: c.brk,
+			addrMode:       Implied,
 		},
 		0x4C: {
-			name:         "JMP",
-			cycles:       3,
-			absoluteAddr: c.jmp,
+			name:        "JMP",
+			cycles:      3,
+			addrHandler: c.jmp,
+			addrMode:    AbsoluteAddr,
 		},
 		0x6C: {
-			name:     "JMP",
-			cycles:   5,
-			indirect: c.jmp,
+			name:        "JMP",
+			cycles:      5,
+			addrHandler: c.jmp,
+			addrMode:    Indirect,
 		},
 		0x20: {
-			cycles:       5,
-			absoluteAddr: c.jsr,
+			cycles:      5,
+			addrHandler: c.jsr,
+			addrMode:    AbsoluteAddr,
 		},
 		0x60: {
-			cycles:  6,
-			implied: c.rts,
+			cycles:         6,
+			impliedHandler: c.rts,
+			addrMode:       Implied,
 		},
 		0x40: {
-			cycles:  6,
-			implied: c.rti,
+			cycles:         6,
+			impliedHandler: c.rti,
+			addrMode:       Implied,
 		},
 	}
 

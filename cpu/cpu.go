@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const clockSpeedHz = 1660000
+
 type handler func(v byte) (byte, bool)
 type impliedHandler func()
 type addrHandler func(addr uint16)
@@ -15,26 +17,52 @@ type flagChange struct {
 	set  bool
 }
 
+type AddrMode string
+
+const (
+	Implied      AddrMode = "implied"
+	Accumulator           = "accumulator"
+	Immediate             = "immediate"
+	ZeroPage              = "zeroPage"
+	ZeroPageX             = "zeroPageX"
+	ZeroPageY             = "zeroPageY"
+	Absolute              = "absolute"
+	AbsoluteAddr          = "absoluteAddr"
+	AbsoluteX             = "absoluteX"
+	AbsoluteY             = "absoluteY"
+	Indirect              = "indirect"
+	IndirectX             = "indirectX"
+	IndirectY             = "indirectY"
+	Relative              = "relative"
+)
+
 type Instr struct {
-	name   string
-	cycles int
+	name     string
+	cycles   int
+	addrMode AddrMode
 
-	implied      impliedHandler
-	accumulator  handler
-	immediate    handler
-	zeroPage     handler
-	zeroPageX    handler
-	zeroPageY    handler
-	absolute     handler
-	absoluteAddr addrHandler // when an address is required
-	absoluteX    handler
-	absoluteY    handler
-	indirect     addrHandler
-	indirectX    handler
-	indirectY    handler
-	relative     condition
+	handler        handler
+	addrHandler    addrHandler
+	impliedHandler impliedHandler
+	condition      condition
+	flagChange     *flagChange
 
-	flagChange *flagChange
+	//implied      impliedHandler
+	//accumulator  handler
+	//immediate    handler
+	//zeroPage     handler
+	//zeroPageX    handler
+	//zeroPageY    handler
+	//absolute     handler
+	//absoluteAddr addrHandler // when an address is required
+	//absoluteX    handler
+	//absoluteY    handler
+	//indirect     addrHandler
+	//indirectX    handler
+	//indirectY    handler
+	//relative     condition
+	//
+	//flagChange *flagChange
 }
 
 type Flag byte
@@ -100,53 +128,55 @@ func (c *CPU) Exec() {
 		panic(fmt.Sprintf("unknown opcode %x", code))
 	}
 
-	fmt.Printf("\ninstr %v - %x", instr.name, code)
+	fmt.Printf("\ninstr %v (%v) - %x", instr.name, instr.addrMode, code)
 
-	switch {
-	case instr.accumulator != nil:
-		c.execAccumulator(instr.accumulator)
-
-	case instr.implied != nil:
-		c.execImplied(instr.implied)
-
-	case instr.immediate != nil:
-		c.execImmediate(instr.immediate)
-
-	case instr.zeroPage != nil:
-		c.execZeroPage(instr.zeroPage)
-
-	case instr.zeroPageX != nil:
-		c.execZeroPageX(instr.zeroPageX)
-
-	case instr.zeroPageY != nil:
-		c.execZeroPageY(instr.zeroPageY)
-
-	case instr.absolute != nil:
-		c.execAbsolute(instr.absolute)
-
-	case instr.absoluteAddr != nil:
-		c.execAbsoluteAddr(instr.absoluteAddr)
-
-	case instr.absoluteX != nil:
-		c.execAbsoluteX(instr.absoluteX)
-
-	case instr.absoluteY != nil:
-		c.execAbsoluteY(instr.absoluteY)
-
-	case instr.indirect != nil:
-		c.execIndirect(instr.indirect)
-
-	case instr.indirectX != nil:
-		c.execIndirectX(instr.indirectX)
-
-	case instr.indirectY != nil:
-		c.execIndirectY(instr.indirectY)
-
-	case instr.relative != nil:
-		c.execRelative(instr.relative)
-
-	case instr.flagChange != nil:
+	if instr.flagChange != nil {
 		c.execFlagChange(instr.flagChange)
+		return
+	}
+
+	switch instr.addrMode {
+	case Accumulator:
+		c.execAccumulator(instr.handler)
+
+	case Implied:
+		c.execImplied(instr.impliedHandler)
+
+	case Immediate:
+		c.execImmediate(instr.handler)
+
+	case ZeroPage:
+		c.execZeroPage(instr.handler)
+
+	case ZeroPageX:
+		c.execZeroPageX(instr.handler)
+
+	case ZeroPageY:
+		c.execZeroPageY(instr.handler)
+
+	case Absolute:
+		c.execAbsolute(instr.handler)
+
+	case AbsoluteAddr:
+		c.execAbsoluteAddr(instr.addrHandler)
+
+	case AbsoluteX:
+		c.execAbsoluteX(instr.handler)
+
+	case AbsoluteY:
+		c.execAbsoluteY(instr.handler)
+
+	case Indirect:
+		c.execIndirect(instr.addrHandler)
+
+	case IndirectX:
+		c.execIndirectX(instr.handler)
+
+	case IndirectY:
+		c.execIndirectY(instr.handler)
+
+	case Relative:
+		c.execRelative(instr.condition)
 	}
 
 	c.addCycles(instr.cycles)

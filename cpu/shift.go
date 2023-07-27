@@ -4,90 +4,110 @@ func (c *CPU) initShift() {
 	instrs := map[byte]Instr{
 		// ASL
 		0x0A: {
-			cycles:      2,
-			accumulator: c.asl,
+			cycles:   2,
+			handler:  c.asl,
+			addrMode: Accumulator,
 		},
 		0x06: {
 			cycles:   3,
-			zeroPage: c.asl,
+			handler:  c.asl,
+			addrMode: ZeroPage,
 		},
 		0x16: {
-			cycles:    4,
-			zeroPageX: c.asl,
+			cycles:   4,
+			handler:  c.asl,
+			addrMode: ZeroPageX,
 		},
 		0x0E: {
 			cycles:   4,
-			absolute: c.asl,
+			handler:  c.asl,
+			addrMode: Absolute,
 		},
 		0x1E: {
-			cycles:    4,
-			absoluteX: c.asl,
+			cycles:   4,
+			handler:  c.asl,
+			addrMode: AbsoluteX,
 		},
 
 		// LSR
 		0x4A: {
-			cycles:      2,
-			accumulator: c.lsr,
+			cycles:   2,
+			handler:  c.lsr,
+			addrMode: Accumulator,
 		},
 		0x4E: {
 			cycles:   6,
-			absolute: c.lsr,
+			handler:  c.lsr,
+			addrMode: Absolute,
 		},
 		0x5E: {
-			cycles:    7,
-			absoluteX: c.lsr,
+			cycles:   7,
+			handler:  c.lsr,
+			addrMode: AbsoluteX,
 		},
 		0x46: {
 			cycles:   5,
-			zeroPage: c.lsr,
+			handler:  c.lsr,
+			addrMode: ZeroPage,
 		},
 		0x56: {
-			cycles:    6,
-			zeroPageX: c.lsr,
+			cycles:   6,
+			handler:  c.lsr,
+			addrMode: ZeroPageX,
 		},
 
 		// ROR
 		0x6A: {
-			cycles:      2,
-			accumulator: c.ror,
+			cycles:   2,
+			handler:  c.ror,
+			addrMode: Accumulator,
 		},
 		0x66: {
 			cycles:   5,
-			zeroPage: c.ror,
+			handler:  c.ror,
+			addrMode: ZeroPage,
 		},
 		0x76: {
-			cycles:    6,
-			zeroPageX: c.ror,
+			cycles:   6,
+			handler:  c.ror,
+			addrMode: ZeroPageX,
 		},
 		0x6E: {
 			cycles:   6,
-			absolute: c.ror,
+			handler:  c.ror,
+			addrMode: Absolute,
 		},
 		0x7E: {
-			cycles:    7,
-			absoluteX: c.ror,
+			cycles:   7,
+			handler:  c.ror,
+			addrMode: AbsoluteX,
 		},
 
 		// ROL
 		0x2A: {
-			cycles:      2,
-			accumulator: c.rol,
+			cycles:   2,
+			handler:  c.rol,
+			addrMode: Accumulator,
 		},
 		0x26: {
 			cycles:   5,
-			zeroPage: c.rol,
+			handler:  c.rol,
+			addrMode: ZeroPage,
 		},
 		0x36: {
-			cycles:    6,
-			zeroPageX: c.rol,
+			cycles:   6,
+			handler:  c.rol,
+			addrMode: ZeroPageX,
 		},
 		0x2E: {
 			cycles:   6,
-			absolute: c.rol,
+			handler:  c.rol,
+			addrMode: Absolute,
 		},
 		0x3E: {
-			cycles:    7,
-			absoluteX: c.rol,
+			cycles:   7,
+			handler:  c.rol,
+			addrMode: AbsoluteX,
 		},
 	}
 

@@ -3,34 +3,40 @@ package cpu
 func (c *CPU) initTransfer() {
 	instrs := map[byte]Instr{
 		0xAA: {
-			name:    "TAX",
-			cycles:  2,
-			implied: c.tax,
+			name:           "TAX",
+			cycles:         2,
+			impliedHandler: c.tax,
+			addrMode:       Implied,
 		},
 		0xA8: {
-			name:    "TAY",
-			cycles:  2,
-			implied: c.tay,
+			name:           "TAY",
+			cycles:         2,
+			impliedHandler: c.tay,
+			addrMode:       Implied,
 		},
 		0xBA: {
-			name:    "TSX",
-			cycles:  2,
-			implied: c.tsx,
+			name:           "TSX",
+			cycles:         2,
+			impliedHandler: c.tsx,
+			addrMode:       Implied,
 		},
 		0x8A: {
-			name:    "TXA",
-			cycles:  2,
-			implied: c.txa,
+			name:           "TXA",
+			cycles:         2,
+			impliedHandler: c.txa,
+			addrMode:       Implied,
 		},
 		0x9A: {
-			name:    "TXS",
-			cycles:  2,
-			implied: c.txs,
+			name:           "TXS",
+			cycles:         2,
+			impliedHandler: c.txs,
+			addrMode:       Implied,
 		},
 		0x98: {
-			name:    "TYA",
-			cycles:  2,
-			implied: c.tya,
+			name:           "TYA",
+			cycles:         2,
+			impliedHandler: c.tya,
+			addrMode:       Implied,
 		},
 	}
 

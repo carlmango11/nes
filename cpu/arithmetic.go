@@ -2,75 +2,145 @@ package cpu
 
 import "log"
 
-const clockSpeedHz = 1660000
-
 func (c *CPU) initArithmetic() {
 	instrs := map[byte]Instr{
 		0x69: {
-			cycles:    2,
-			immediate: c.adc,
+			name:     "ADC",
+			cycles:   2,
+			handler:  c.adc,
+			addrMode: Immediate,
 		},
 		0x65: {
+			name:     "ADC",
 			cycles:   3,
-			zeroPage: c.adc,
+			handler:  c.adc,
+			addrMode: ZeroPage,
 		},
 		0x75: {
-			cycles:    4,
-			zeroPageX: c.adc,
+			name:     "ADC",
+			cycles:   4,
+			handler:  c.adc,
+			addrMode: ZeroPageX,
 		},
 		0x6D: {
+			name:     "ADC",
 			cycles:   4,
-			absolute: c.adc,
+			handler:  c.adc,
+			addrMode: Absolute,
 		},
 		0x7D: {
-			cycles:    4,
-			absoluteX: c.adc,
+			name:     "ADC",
+			cycles:   4,
+			handler:  c.adc,
+			addrMode: AbsoluteX,
 		},
 		0x79: {
-			cycles:    4,
-			absoluteY: c.adc,
+			name:     "ADC",
+			cycles:   4,
+			handler:  c.adc,
+			addrMode: AbsoluteY,
 		},
 		0x61: {
-			cycles:    6,
-			indirectX: c.adc,
+			name:     "ADC",
+			cycles:   6,
+			handler:  c.adc,
+			addrMode: IndirectX,
 		},
 		0x71: {
-			cycles:    5,
-			indirectY: c.adc,
+			name:     "ADC",
+			cycles:   5,
+			handler:  c.adc,
+			addrMode: IndirectY,
 		},
 
 		// CMP
 		0xC9: {
-			cycles:    2,
-			immediate: c.cmp,
+			name:     "CMP",
+			cycles:   2,
+			handler:  c.cmp,
+			addrMode: Immediate,
 		},
 		0xC5: {
+			name:     "CMP",
 			cycles:   3,
-			zeroPage: c.cmp,
+			handler:  c.cmp,
+			addrMode: ZeroPage,
 		},
 		0xD5: {
-			cycles:    4,
-			zeroPageX: c.cmp,
+			name:     "CMP",
+			cycles:   4,
+			handler:  c.cmp,
+			addrMode: ZeroPageX,
 		},
 		0xCD: {
+			name:     "CMP",
 			cycles:   4,
-			absolute: c.cmp,
+			handler:  c.cmp,
+			addrMode: Absolute,
 		},
 		0xDD: {
-			cycles:    4,
-			absoluteX: c.cmp,
+			name:     "CMP",
+			cycles:   4,
+			handler:  c.cmp,
+			addrMode: AbsoluteX,
 		},
 		0xD9: {
-			cycles:    4,
-			absoluteY: c.cmp,
+			name:     "CMP",
+			cycles:   4,
+			handler:  c.cmp,
+			addrMode: AbsoluteY,
 		},
 		0xC1: {
-			cycles:    6,
-			indirectX: c.cmp,
+			name:     "CMP",
+			cycles:   6,
+			handler:  c.cmp,
+			addrMode: IndirectX,
 		},
 		0xD1: {
-			cycles:    5,
-			indirectY: c.cmp,
+			name:     "CMP",
+			cycles:   5,
+			handler:  c.cmp,
+			addrMode: IndirectY,
+		},
+
+		// CPX
+		0xE0: {
+			name:     "CPX",
+			cycles:   2,
+			handler:  c.cpx,
+			addrMode: Immediate,
+		},
+		0xEC: {
+			name:     "CPX",
+			cycles:   3,
+			handler:  c.cpx,
+			addrMode: Absolute,
+		},
+		0xE4: {
+			name:     "CPX",
+			cycles:   2,
+			handler:  c.cpx,
+			addrMode: ZeroPage,
+		},
+
+		// CPY
+		0xC0: {
+			name:     "CPY",
+			cycles:   2,
+			handler:  c.cpy,
+			addrMode: Immediate,
+		},
+		0xCC: {
+			name:     "CPY",
+			cycles:   3,
+			handler:  c.cpy,
+			addrMode: Absolute,
+		},
+		0xC4: {
+			name:     "CPY",
+			cycles:   2,
+			handler:  c.cpy,
+			addrMode: ZeroPage,
 		},
 	}
 

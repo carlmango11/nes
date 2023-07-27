@@ -605,7 +605,7 @@ next_test   macro           ;make sure, tests don't jump the fence
             trap_ne         ;test is out of sequence
 test_num = test_num + 1
             lda #test_num   ;*** next tests' number
-            sta test_case
+            sta test_case << OMG 26 is that right?
             ;check_ram       ;uncomment to find altered RAM after each test
             endm
 
@@ -757,7 +757,7 @@ test_num = 0
         jmp psb_test
 psb_bwok
         ldy #5
-        bne psb_forw
+16      bne psb_forw
         trap        ;branch should be taken
         dey         ;forward landing zone
         dey
@@ -770,7 +770,7 @@ psb_forw
         dey
         dey
         dey
-        beq psb_fwok
+22      beq psb_fwok
         trap        ;forward offset
 
         dex         ;backward landing zone
@@ -857,7 +857,7 @@ gcs4    iny
 
     if disable_selfmod = 0
 ;testing relative addressing with BEQ
-        ldy #$fe        ;testing maximum range, not -1/-2 (invalid/self adr)
+        ldy #$fe        ;testing maximum range, not -1/-2 (invalid/self adr) <<<< OMG 27
 range_loop
         dey             ;next relative address
         tya
@@ -865,7 +865,7 @@ range_loop
         bpl range_fw    ;calculate relative address
         clc             ;avoid branch self or to relative address of branch
         adc #2
-        nop             ;offset landing zone - tolerate +/-5 offset to branch
+        nop             ;offset landing zone - tolerate +/-5 offset to branch << OMG 32
         nop
         nop
         nop
@@ -876,7 +876,7 @@ range_fw
         nop
         nop
         nop
-        eor #$7f        ;complement except sign
+        eor #$7f        ;complement except sign << OMG 43
         sta range_adr   ;load into test target
         lda #0          ;should set zero flag in status register
         jmp range_op
@@ -1015,7 +1015,7 @@ range_fw
         dex             ;-3
 range_op                ;test target with zero flag=0, z=1 if previous dex
 range_adr   = *+1       ;modifiable relative address
-        beq *+64        ;+64 if called without modification
+        beq *+64        ;+64 if called without modification << OMG 47
         dex             ;+0
         dex
         dex

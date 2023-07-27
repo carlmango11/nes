@@ -25,7 +25,7 @@ func main() {
 
 	c := cpu.New(r, 0x0400)
 
-	for range time.Tick(time.Millisecond * 100) {
+	for range time.Tick(time.Millisecond * 70) {
 		c.Exec()
 		c.PrintState()
 		fmt.Println("\n--------------------")
