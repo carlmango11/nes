@@ -77,8 +77,10 @@ func (c *CPU) jmp(addr uint16) {
 }
 
 func (c *CPU) jsr(addr uint16) {
-	lo := byte(c.pc)
-	hi := byte(c.pc >> 8)
+	returnAddr := c.pc - 1
+
+	lo := byte(returnAddr)
+	hi := byte(returnAddr >> 8)
 
 	c.pushStack(hi)
 	c.pushStack(lo)
@@ -90,5 +92,5 @@ func (c *CPU) rts() {
 	lo := c.popStack()
 	hi := c.popStack()
 
-	c.pc = toAddr(hi, lo)
+	c.pc = toAddr(hi, lo) + 1
 }

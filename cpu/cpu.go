@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"Nes/log"
 	"Nes/ram"
 	"fmt"
 )
@@ -11,6 +12,16 @@ type handler func(v byte) (byte, bool)
 type impliedHandler func()
 type addrHandler func(addr uint16)
 type condition func() bool
+
+type State struct {
+	PC  uint16
+	P   byte
+	S   byte
+	A   byte
+	X   byte
+	Y   byte
+	RAM [][]uint16
+}
 
 type flagChange struct {
 	flag Flag
@@ -31,7 +42,7 @@ const (
 	AbsoluteX             = "absoluteX"
 	AbsoluteY             = "absoluteY"
 	Indirect              = "indirect"
-	IndirectX             = "indirectX"
+	XIndirect             = "indirectX"
 	IndirectY             = "indirectY"
 	Relative              = "relative"
 )
@@ -46,23 +57,6 @@ type Instr struct {
 	impliedHandler impliedHandler
 	condition      condition
 	flagChange     *flagChange
-
-	//implied      impliedHandler
-	//accumulator  handler
-	//immediate    handler
-	//zeroPage     handler
-	//zeroPageX    handler
-	//zeroPageY    handler
-	//absolute     handler
-	//absoluteAddr addrHandler // when an address is required
-	//absoluteX    handler
-	//absoluteY    handler
-	//indirect     addrHandler
-	//indirectX    handler
-	//indirectY    handler
-	//relative     condition
-	//
-	//flagChange *flagChange
 }
 
 type Flag byte
@@ -113,6 +107,34 @@ func (c *CPU) initInstrs() {
 	c.initNop()
 }
 
+func (c *CPU) HasOpCode(opCode byte) bool {
+	_, ok := c.opCodes[opCode]
+	return ok
+}
+
+func (c *CPU) State() *State {
+	return &State{
+		PC: c.pc,
+		S:  c.s,
+		A:  c.a,
+		X:  c.x,
+		Y:  c.y,
+	}
+}
+
+func (c *CPU) LoadState(state State) {
+	for _, e := range state.RAM {
+		c.ram.Write(e[0], uint8(e[1]))
+	}
+
+	c.pc = state.PC
+	c.p = state.P
+	c.s = state.S
+	c.a = state.A
+	c.x = state.X
+	c.y = state.Y
+}
+
 func (c *CPU) PrintState() {
 	fmt.Printf("\nC: %v\ta:%x x:%x y:%x s:%x pc:%x", c.c, c.a, c.x, c.y, c.s, c.pc)
 	fmt.Printf("\nN: %t V: %t B: %t D: %t I: %t Z: %t C: %t",
@@ -128,7 +150,7 @@ func (c *CPU) Exec() {
 		panic(fmt.Sprintf("unknown opcode %x", code))
 	}
 
-	fmt.Printf("\ninstr %v (%v) - %x", instr.name, instr.addrMode, code)
+	//fmt.Printf("\ninstr %v (%v) - %x", instr.name, instr.addrMode, code)
 
 	if instr.flagChange != nil {
 		c.execFlagChange(instr.flagChange)
@@ -169,7 +191,7 @@ func (c *CPU) Exec() {
 	case Indirect:
 		c.execIndirect(instr.addrHandler)
 
-	case IndirectX:
+	case XIndirect:
 		c.execIndirectX(instr.handler)
 
 	case IndirectY:
@@ -208,7 +230,7 @@ func (c *CPU) execImplied(f impliedHandler) {
 }
 
 func (c *CPU) execAccumulator(f handler) {
-	c.a, _ = f(c.read())
+	c.a, _ = f(c.a)
 }
 
 func (c *CPU) execImmediate(f handler) {
@@ -234,7 +256,8 @@ func (c *CPU) execZeroPageY(f handler) {
 }
 
 func (c *CPU) execZeroPageGeneric(f handler, register byte) {
-	addr := uint16(c.read()+register) % 255
+	mem := c.read()
+	addr := uint16(mem+register) % 0x100
 
 	newVal, write := f(c.ram.Read(addr))
 
@@ -256,19 +279,18 @@ func (c *CPU) execAbsoluteY(f handler) {
 }
 
 func (c *CPU) execIndirect(f addrHandler) {
-	lo := uint16(c.read())
-	hi := uint16(c.read())
+	lo := c.read()
+	hi := c.read()
 
-	addr := hi << 8
-	addr |= lo
+	loAddr := toAddr(hi, lo)
+	hiAddr := toAddr(hi, lo+1) // add 1 to lo because we shouldn't cross page boundary
 
-	lo = uint16(c.ram.Read(addr))
-	hi = uint16(c.ram.Read(addr + 1))
+	log.Printf("OMG %x %v / %x %v", loAddr, loAddr, hiAddr, hiAddr)
 
-	addr = hi << 8
-	addr |= lo
+	targetLo := c.ram.Read(loAddr)
+	targetHi := c.ram.Read(hiAddr)
 
-	f(addr)
+	f(toAddr(targetHi, targetLo))
 }
 
 func (c *CPU) readAddr() uint16 {
@@ -280,11 +302,43 @@ func (c *CPU) readAddr() uint16 {
 }
 
 func (c *CPU) execIndirectX(f handler) {
-	c.execIndirectGeneric(f, c.x)
+	zeroAddr := c.read()
+	zeroAddr += c.x
+
+	addr := uint16(zeroAddr)
+
+	if addr >= 0x100 {
+		panic(fmt.Sprintf("invalid zero page address %x", addr))
+	}
+
+	lo := c.ram.Read(addr)
+	hi := c.ram.Read((addr + 1) % 0x100) // wrap around zero page
+
+	finalAddr := toAddr(hi, lo)
+
+	newVal, write := f(c.ram.Read(finalAddr))
+
+	if write {
+		c.ram.Write(finalAddr, newVal)
+	}
 }
 
 func (c *CPU) execIndirectY(f handler) {
-	c.execIndirectGeneric(f, c.y)
+	zeroAddr := uint16(c.read())
+
+	loAddr := c.ram.Read(zeroAddr)
+	hiAddr := c.ram.Read((zeroAddr + 1) % 0x100) // wrap around zero page
+
+	addr := toAddr(hiAddr, loAddr)
+	addr += uint16(c.y)
+
+	val := c.ram.Read(addr)
+
+	newVal, write := f(val)
+
+	if write {
+		c.ram.Write(addr, newVal)
+	}
 }
 
 func (c *CPU) execRelative(cond condition) {
@@ -293,30 +347,14 @@ func (c *CPU) execRelative(cond condition) {
 	var cycles int
 
 	if cond() {
-		fmt.Printf("\nbranching: %v", offset)
 		c.pc = uint16(int16(c.pc) + int16(offset))
 		cycles = 1
 	} else {
-		fmt.Printf("\nnot branching")
 		cycles = 2
 	}
 
 	c.addCycles(cycles)
 	// TODO: page boundary
-}
-
-func (c *CPU) execIndirectGeneric(f handler, addition byte) {
-	zeroAddr := c.read()
-	zeroAddr += addition
-
-	addr := uint16(zeroAddr)
-
-	lo := c.ram.Read(addr)
-	hi := c.ram.Read(addr + 1)
-
-	finalAddr := toAddr(hi, lo)
-
-	f(c.ram.Read(finalAddr))
 }
 
 func (c *CPU) execAbsoluteAddr(f addrHandler) {
@@ -378,8 +416,8 @@ func (c *CPU) pushStack(v byte) {
 }
 
 func (c *CPU) popStack() byte {
-	v := c.ram.Read(c.stackAddr())
 	c.s++
+	v := c.ram.Read(c.stackAddr())
 
 	return v
 }

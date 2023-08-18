@@ -1148,7 +1148,7 @@ range_adr   = *+1       ;modifiable relative address
         nop
         nop
         nop
-        beq range_ok    ;+127 - max forward
+        beq range_ok    ;+127 - max forward << Z flag expected to be set here
         trap            ; bad range
         nop             ;offset landing zone - tolerate +/-5 offset to branch
         nop

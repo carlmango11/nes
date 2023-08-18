@@ -36,7 +36,7 @@ func (c *CPU) initLogic() {
 		0x21: {
 			cycles:   6,
 			handler:  c.and,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0x31: {
 			cycles:   5,
@@ -85,7 +85,7 @@ func (c *CPU) initLogic() {
 			name:     "EOR",
 			cycles:   6,
 			handler:  c.eor,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0x51: {
 			name:     "EOR",
@@ -135,7 +135,7 @@ func (c *CPU) initLogic() {
 			name:     "ORA",
 			cycles:   6,
 			handler:  c.ora,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0x11: {
 			name:     "ORA",

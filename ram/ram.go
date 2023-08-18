@@ -1,10 +1,10 @@
 package ram
 
 import (
-	"fmt"
+	"Nes/log"
 )
 
-const size = 100000000
+const size = 100000
 
 // Stack is $0100 - $01FF
 type RAM struct {
@@ -17,15 +17,28 @@ func New() *RAM {
 	}
 }
 
+func (r *RAM) Dump() [][]uint16 {
+	var dump [][]uint16
+
+	for i, v := range r.data {
+		dump = append(dump, []uint16{
+			uint16(i),
+			uint16(v),
+		})
+	}
+
+	return dump
+}
+
 func (r *RAM) Read(addr uint16) byte {
 	v := r.data[addr]
-	fmt.Printf("\nram: read %x from %x", v, addr)
+	log.Debugf("ram: read %x (%v) from %x (%v)", v, v, addr, addr)
 
 	return v
 }
 
 func (r *RAM) Write(addr uint16, v byte) {
-	fmt.Printf("\nram: write %x to %x", v, addr)
+	log.Debugf("ram: write %x to %x", v, addr)
 	r.data[addr] = v
 }
 

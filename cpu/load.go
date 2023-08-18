@@ -51,7 +51,7 @@ func (c *CPU) initLoad() {
 			name:     "LDY",
 			cycles:   4,
 			handler:  c.ldy,
-			addrMode: ZeroPageY,
+			addrMode: ZeroPageX,
 		},
 		0xAC: {
 			name:     "LDY",
@@ -63,7 +63,7 @@ func (c *CPU) initLoad() {
 			name:     "LDY",
 			cycles:   4,
 			handler:  c.ldy,
-			addrMode: AbsoluteY,
+			addrMode: AbsoluteX,
 		},
 
 		0xA9: {
@@ -106,7 +106,7 @@ func (c *CPU) initLoad() {
 			name:     "LDA",
 			cycles:   6,
 			handler:  c.lda,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0xB1: {
 			name:     "LDA",
@@ -146,7 +146,7 @@ func (c *CPU) initLoad() {
 		0x94: {
 			cycles:   4,
 			handler:  c.sty,
-			addrMode: ZeroPageY,
+			addrMode: ZeroPageX,
 		},
 
 		// STA
@@ -179,7 +179,7 @@ func (c *CPU) initLoad() {
 		0x81: {
 			cycles:   6,
 			handler:  c.sta,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0x91: {
 			cycles:   6,

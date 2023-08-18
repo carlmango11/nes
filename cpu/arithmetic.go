@@ -1,7 +1,5 @@
 package cpu
 
-import "log"
-
 func (c *CPU) initArithmetic() {
 	instrs := map[byte]Instr{
 		0x69: {
@@ -44,7 +42,7 @@ func (c *CPU) initArithmetic() {
 			name:     "ADC",
 			cycles:   6,
 			handler:  c.adc,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0x71: {
 			name:     "ADC",
@@ -94,7 +92,7 @@ func (c *CPU) initArithmetic() {
 			name:     "CMP",
 			cycles:   6,
 			handler:  c.cmp,
-			addrMode: IndirectX,
+			addrMode: XIndirect,
 		},
 		0xD1: {
 			name:     "CMP",
@@ -142,6 +140,56 @@ func (c *CPU) initArithmetic() {
 			handler:  c.cpy,
 			addrMode: ZeroPage,
 		},
+
+		// SBC
+		0xE9: {
+			name:     "SBC",
+			cycles:   2,
+			handler:  c.sbc,
+			addrMode: Immediate,
+		},
+		0xED: {
+			name:     "SBC",
+			cycles:   4,
+			handler:  c.sbc,
+			addrMode: Absolute,
+		},
+		0xFD: {
+			name:     "SBC",
+			cycles:   4,
+			handler:  c.sbc,
+			addrMode: AbsoluteX,
+		},
+		0xF9: {
+			name:     "SBC",
+			cycles:   4,
+			handler:  c.sbc,
+			addrMode: AbsoluteY,
+		},
+		0xE5: {
+			name:     "SBC",
+			cycles:   3,
+			handler:  c.sbc,
+			addrMode: ZeroPage,
+		},
+		0xF5: {
+			name:     "SBC",
+			cycles:   4,
+			handler:  c.sbc,
+			addrMode: ZeroPageX,
+		},
+		0xE1: {
+			name:     "SBC",
+			cycles:   6,
+			handler:  c.sbc,
+			addrMode: XIndirect,
+		},
+		0xF1: {
+			name:     "SBC",
+			cycles:   5,
+			handler:  c.sbc,
+			addrMode: IndirectY,
+		},
 	}
 
 	for code, instr := range instrs {
@@ -173,12 +221,7 @@ func (c *CPU) compareGeneric(register byte, memory byte) (byte, bool) {
 func (c *CPU) sbc(v byte) (byte, bool) {
 	hadBorrow := c.flagSet(FlagB)
 
-	if c.flagSet(FlagD) {
-		//c.subDecimal(v, hadBorrow)
-		log.Panicf("tried to use decimal sbc: %v", v)
-	} else {
-		c.subBinary(v, hadBorrow)
-	}
+	c.subBinary(v, hadBorrow)
 
 	c.setNZFromA()
 	return 0, false
@@ -188,33 +231,11 @@ func (c *CPU) sbc(v byte) (byte, bool) {
 func (c *CPU) adc(v byte) (byte, bool) {
 	hadCarry := c.flagSet(FlagC)
 
-	if c.flagSet(FlagD) {
-		//c.addDecimal(v, hadCarry)
-		log.Panicf("tried to use decimal adc: %v", v)
-	} else {
-		c.addBinary(v, hadCarry)
-	}
+	c.addBinary(v, hadCarry)
 
 	c.setNZFromA()
 	return 0, false
 }
-
-//func (c *CPU) addDecimal(v byte, hadCarry bool) {
-//	result := fromBCD(c.a) + fromBCD(v)
-//
-//	if hadCarry {
-//		result++
-//	}
-//
-//	if result > 99 {
-//		result %= 100
-//		c.setFlag(FlagC)
-//	} else {
-//		c.clearFlag(FlagC)
-//	}
-//
-//	c.a = toBCD(result)
-//}
 
 func (c *CPU) addBinary(v byte, hadCarry bool) {
 	wasNeg := isNeg(c.a)
@@ -229,19 +250,6 @@ func (c *CPU) addBinary(v byte, hadCarry bool) {
 
 	c.setFlagTo(FlagV, wasNeg != isNeg(c.a)) // TODO: wrong
 }
-
-//func (c *CPU) subDecimal(v byte, hadBorrow bool) {
-//	result := fromBCD(c.a) + fromBCD(v)
-//
-//	if result > 99 {
-//		result %= 100
-//		c.setFlag(FlagC)
-//	} else {
-//		c.clearFlag(FlagC)
-//	}
-//
-//	c.a = toBCD(result)
-//}
 
 func (c *CPU) subBinary(v byte, hadBorrow bool) {
 	c.a -= v
