@@ -38,7 +38,7 @@ func (r *RAM) Read(addr uint16) byte {
 }
 
 func (r *RAM) Write(addr uint16, v byte) {
-	log.Debugf("ram: write %x to %x", v, addr)
+	log.Debugf("ram: write %x (%v) to %x (%v)", v, v, addr, addr)
 	r.data[addr] = v
 }
 

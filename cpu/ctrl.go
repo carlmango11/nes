@@ -46,20 +46,13 @@ func (c *CPU) initCtrl() {
 }
 
 func (c *CPU) brk() {
-	ret := c.pc + 1
-	retLo := byte(ret)
-	retHi := byte(ret >> 8)
+	c.pushAddr(c.pc + 1)
+	c.pushFlagsToStack()
 
-	c.pushStack(retHi)
-	c.pushStack(retLo)
-	c.pushStack(c.p)
+	lo := c.ram.Read(VectorIRQ)
+	hi := c.ram.Read(VectorIRQ + 1)
 
-	lo := c.ram.Read(0xFFFE)
-	hi := c.ram.Read(0xFFFF)
-
-	targetAddr := toAddr(hi, lo)
-
-	c.pc = targetAddr
+	c.pc = toAddr(hi, lo)
 }
 
 func (c *CPU) rti() {
@@ -77,14 +70,7 @@ func (c *CPU) jmp(addr uint16) {
 }
 
 func (c *CPU) jsr(addr uint16) {
-	returnAddr := c.pc - 1
-
-	lo := byte(returnAddr)
-	hi := byte(returnAddr >> 8)
-
-	c.pushStack(hi)
-	c.pushStack(lo)
-
+	c.pushAddr(c.pc - 1)
 	c.pc = addr
 }
 

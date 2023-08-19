@@ -8,6 +8,10 @@ import (
 
 const clockSpeedHz = 1660000
 
+const (
+	VectorIRQ = 0xFFFE
+)
+
 type handler func(v byte) (byte, bool)
 type impliedHandler func()
 type addrHandler func(addr uint16)
@@ -410,6 +414,17 @@ func (c *CPU) stackAddr() uint16 {
 	return 0x0100 | uint16(c.s)
 }
 
+func (c *CPU) pushFlagsToStack() {
+	c.pushStack(c.p | 0x10)
+}
+
+func (c *CPU) pushAddr(addr uint16) {
+	hi, lo := fromAddr(addr)
+
+	c.pushStack(hi)
+	c.pushStack(lo)
+}
+
 func (c *CPU) pushStack(v byte) {
 	c.ram.Write(c.stackAddr(), v)
 	c.s--
@@ -437,4 +452,11 @@ func toBCD(v byte) byte {
 func toAddr(hi, lo byte) uint16 {
 	addr := uint16(hi) << 8
 	return addr | uint16(lo)
+}
+
+func fromAddr(addr uint16) (byte, byte) {
+	lo := byte(addr)
+	hi := byte(addr >> 8)
+
+	return hi, lo
 }

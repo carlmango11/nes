@@ -38,7 +38,7 @@ func (c *CPU) pha() {
 }
 
 func (c *CPU) php() {
-	c.pushStack(c.p | 0x10)
+	c.pushFlagsToStack()
 }
 
 func (c *CPU) pla() {
