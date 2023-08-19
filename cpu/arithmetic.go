@@ -219,12 +219,7 @@ func (c *CPU) compareGeneric(register byte, memory byte) (byte, bool) {
 
 // TODO: carry flag, page boundary
 func (c *CPU) sbc(v byte) (byte, bool) {
-	hadBorrow := c.flagSet(FlagB)
-
-	c.subBinary(v, hadBorrow)
-
-	c.setNZFromA()
-	return 0, false
+	return c.adc(^v)
 }
 
 // TODO: carry flag, page boundary

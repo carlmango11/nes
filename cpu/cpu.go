@@ -150,7 +150,7 @@ func (c *CPU) Exec() {
 		panic(fmt.Sprintf("unknown opcode %x", code))
 	}
 
-	//fmt.Printf("\ninstr %v (%v) - %x", instr.name, instr.addrMode, code)
+	log.Debugf("instr %v (%v) - %x", instr.name, instr.addrMode, code)
 
 	if instr.flagChange != nil {
 		c.execFlagChange(instr.flagChange)

@@ -52,9 +52,6 @@ func TestCPU(t *testing.T) {
 		if fd.Name() == "00.json" {
 			continue
 		}
-		if fd.Name() != "fd.json" {
-			continue
-		}
 
 		code, err := hex.DecodeString(fd.Name()[0:2])
 		if err != nil {
@@ -94,10 +91,6 @@ func runSuite(t *testing.T, fileName string, code byte) {
 	}
 
 	for _, test := range tests {
-		if test.Name != "fd b7 c5" {
-			continue
-		}
-
 		if dodgy[code][test.Name] {
 			continue
 		}
@@ -105,7 +98,6 @@ func runSuite(t *testing.T, fileName string, code byte) {
 		t.Run(test.Name, func(t *testing.T) {
 			runTest(t, test)
 		})
-		//break
 	}
 }
 
@@ -118,7 +110,6 @@ func runTest(t *testing.T, test TestCase) {
 	c.Exec()
 
 	s := c.State()
-	//c.PrintState()
 
 	assert.Equal(t, test.Final.PC, s.PC, "pc mismatch. actual: %x (%v), expected: %x (%v)", s.PC, s.PC, test.Final.PC, test.Final.PC)
 	assert.Equal(t, test.Final.A, s.A)
