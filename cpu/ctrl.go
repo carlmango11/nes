@@ -49,8 +49,8 @@ func (c *CPU) brk() {
 	c.pushAddr(c.pc + 1)
 	c.pushFlagsToStack()
 
-	lo := c.ram.Read(VectorIRQ)
-	hi := c.ram.Read(VectorIRQ + 1)
+	lo := c.bus.Read(VectorIRQ)
+	hi := c.bus.Read(VectorIRQ + 1)
 
 	c.pc = toAddr(hi, lo)
 }

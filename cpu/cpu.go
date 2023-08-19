@@ -1,15 +1,17 @@
 package cpu
 
 import (
+	"Nes/bus"
 	"Nes/log"
-	"Nes/ram"
 	"fmt"
 )
 
-const clockSpeedHz = 1660000
+const ClockSpeedHz = 1 //1660000
 
 const (
-	VectorIRQ = 0xFFFE
+	VectorNMI   = 0xFFFA
+	VectorReset = 0xFFFC
+	VectorIRQ   = 0xFFFE
 )
 
 type handler func(v byte) (byte, bool)
@@ -76,23 +78,26 @@ const (
 )
 
 type CPU struct {
+	bus     *bus.Bus
 	opCodes map[byte]Instr
-	ram     *ram.RAM
 
 	pc            uint16
 	s, p, a, x, y byte
 	c             int
 }
 
-func New(ram *ram.RAM, pc uint16) *CPU {
+func New(bus *bus.Bus) *CPU {
 	c := &CPU{
-		ram:     ram,
+		bus:     bus,
 		opCodes: map[byte]Instr{},
 		s:       0xFF, // starts at top
-		pc:      pc,
 	}
 
 	c.initInstrs()
+
+	lo := c.bus.Read(VectorReset)
+	hi := c.bus.Read(VectorReset + 1)
+	c.pc = toAddr(hi, lo)
 
 	return c
 }
@@ -128,7 +133,7 @@ func (c *CPU) State() *State {
 
 func (c *CPU) LoadState(state State) {
 	for _, e := range state.RAM {
-		c.ram.Write(e[0], uint8(e[1]))
+		c.bus.Write(e[0], uint8(e[1]))
 	}
 
 	c.pc = state.PC
@@ -140,13 +145,15 @@ func (c *CPU) LoadState(state State) {
 }
 
 func (c *CPU) PrintState() {
-	fmt.Printf("\nC: %v\ta:%x x:%x y:%x s:%x pc:%x", c.c, c.a, c.x, c.y, c.s, c.pc)
-	fmt.Printf("\nN: %t V: %t B: %t D: %t I: %t Z: %t C: %t",
+	log.Debugf("C: %v\ta:%x x:%x y:%x s:%x pc:%x", c.c, c.a, c.x, c.y, c.s, c.pc)
+	log.Debugf("N: %t V: %t B: %t D: %t I: %t Z: %t C: %t",
 		c.flagSet(FlagN), c.flagSet(FlagV), c.flagSet(FlagB), c.flagSet(FlagD),
 		c.flagSet(FlagI), c.flagSet(FlagZ), c.flagSet(FlagC))
 }
 
 func (c *CPU) Exec() {
+	log.Debugf(">> executing at %x", c.pc)
+
 	code := c.read()
 
 	instr, ok := c.opCodes[code]
@@ -208,6 +215,8 @@ func (c *CPU) Exec() {
 	c.addCycles(instr.cycles)
 
 	c.c++
+
+	c.PrintState()
 }
 
 func (c *CPU) addCycles(count int) {
@@ -215,7 +224,7 @@ func (c *CPU) addCycles(count int) {
 }
 
 func (c *CPU) read() byte {
-	val := c.ram.Read(c.pc)
+	val := c.bus.Read(c.pc)
 	c.pc++
 
 	return val
@@ -244,10 +253,10 @@ func (c *CPU) execImmediate(f handler) {
 func (c *CPU) execZeroPage(f handler) {
 	addr := uint16(c.read())
 
-	newVal, write := f(c.ram.Read(addr))
+	newVal, write := f(c.bus.Read(addr))
 
 	if write {
-		c.ram.Write(addr, newVal)
+		c.bus.Write(addr, newVal)
 	}
 }
 
@@ -263,10 +272,10 @@ func (c *CPU) execZeroPageGeneric(f handler, register byte) {
 	mem := c.read()
 	addr := uint16(mem+register) % 0x100
 
-	newVal, write := f(c.ram.Read(addr))
+	newVal, write := f(c.bus.Read(addr))
 
 	if write {
-		c.ram.Write(addr, newVal)
+		c.bus.Write(addr, newVal)
 	}
 }
 
@@ -291,8 +300,8 @@ func (c *CPU) execIndirect(f addrHandler) {
 
 	log.Printf("OMG %x %v / %x %v", loAddr, loAddr, hiAddr, hiAddr)
 
-	targetLo := c.ram.Read(loAddr)
-	targetHi := c.ram.Read(hiAddr)
+	targetLo := c.bus.Read(loAddr)
+	targetHi := c.bus.Read(hiAddr)
 
 	f(toAddr(targetHi, targetLo))
 }
@@ -315,33 +324,33 @@ func (c *CPU) execIndirectX(f handler) {
 		panic(fmt.Sprintf("invalid zero page address %x", addr))
 	}
 
-	lo := c.ram.Read(addr)
-	hi := c.ram.Read((addr + 1) % 0x100) // wrap around zero page
+	lo := c.bus.Read(addr)
+	hi := c.bus.Read((addr + 1) % 0x100) // wrap around zero page
 
 	finalAddr := toAddr(hi, lo)
 
-	newVal, write := f(c.ram.Read(finalAddr))
+	newVal, write := f(c.bus.Read(finalAddr))
 
 	if write {
-		c.ram.Write(finalAddr, newVal)
+		c.bus.Write(finalAddr, newVal)
 	}
 }
 
 func (c *CPU) execIndirectY(f handler) {
 	zeroAddr := uint16(c.read())
 
-	loAddr := c.ram.Read(zeroAddr)
-	hiAddr := c.ram.Read((zeroAddr + 1) % 0x100) // wrap around zero page
+	loAddr := c.bus.Read(zeroAddr)
+	hiAddr := c.bus.Read((zeroAddr + 1) % 0x100) // wrap around zero page
 
 	addr := toAddr(hiAddr, loAddr)
 	addr += uint16(c.y)
 
-	val := c.ram.Read(addr)
+	val := c.bus.Read(addr)
 
 	newVal, write := f(val)
 
 	if write {
-		c.ram.Write(addr, newVal)
+		c.bus.Write(addr, newVal)
 	}
 }
 
@@ -369,10 +378,10 @@ func (c *CPU) execAbsoluteGeneric(f handler, addition byte) {
 	addr := c.readAddr()
 	addr += uint16(addition)
 
-	newVal, write := f(c.ram.Read(addr))
+	newVal, write := f(c.bus.Read(addr))
 
 	if write {
-		c.ram.Write(addr, newVal)
+		c.bus.Write(addr, newVal)
 	}
 }
 
@@ -426,13 +435,13 @@ func (c *CPU) pushAddr(addr uint16) {
 }
 
 func (c *CPU) pushStack(v byte) {
-	c.ram.Write(c.stackAddr(), v)
+	c.bus.Write(c.stackAddr(), v)
 	c.s--
 }
 
 func (c *CPU) popStack() byte {
 	c.s++
-	v := c.ram.Read(c.stackAddr())
+	v := c.bus.Read(c.stackAddr())
 
 	return v
 }

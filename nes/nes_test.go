@@ -49,9 +49,9 @@ func TestCPU(t *testing.T) {
 	}
 
 	for _, fd := range de {
-		if fd.Name() == "00.json" {
-			continue
-		}
+		//if fd.Name() != "00.json" {
+		//	continue
+		//}
 
 		code, err := hex.DecodeString(fd.Name()[0:2])
 		if err != nil {
@@ -91,6 +91,10 @@ func runSuite(t *testing.T, fileName string, code byte) {
 	}
 
 	for _, test := range tests {
+		//if test.Name != "00 35 26" {
+		//	continue
+		//}
+
 		if dodgy[code][test.Name] {
 			continue
 		}
