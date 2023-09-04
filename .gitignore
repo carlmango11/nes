@@ -1,2 +1,4 @@
 .idea/
 Nes.iml
+frontend/public/nes.wasm
+frontend/node_modules

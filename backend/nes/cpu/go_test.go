@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"Nes/bus"
 	"Nes/ram"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -21,7 +22,7 @@ func TestBCD(t *testing.T) {
 }
 
 func TestSetFlags(t *testing.T) {
-	c := New(nil, 0)
+	c := New(bus.New(nil))
 	c.p = 0b10101010
 
 	c.setFlag(FlagC)
@@ -46,23 +47,23 @@ func TestFlagInstructions(t *testing.T) {
 	r.Write(0x04, 0x58) // clear interrupt
 	r.Write(0x05, 0xD8) // clear decimal
 
-	c := New(r, 0)
+	c := New(bus.New(nil))
 
-	c.Exec()
+	c.Tick()
 	assert.True(t, c.flagSet(FlagC))
 
-	c.Exec()
+	c.Tick()
 	assert.True(t, c.flagSet(FlagI))
 
-	c.Exec()
+	c.Tick()
 	assert.True(t, c.flagSet(FlagD))
 
-	c.Exec()
+	c.Tick()
 	assert.False(t, c.flagSet(FlagC))
 
-	c.Exec()
+	c.Tick()
 	assert.False(t, c.flagSet(FlagI))
 
-	c.Exec()
+	c.Tick()
 	assert.False(t, c.flagSet(FlagD))
 }

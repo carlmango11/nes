@@ -117,16 +117,19 @@ func (c *CPU) initLoad() {
 
 		// STX
 		0x8E: {
+			name:     "STX",
 			cycles:   4,
 			handler:  c.stx,
 			addrMode: Absolute,
 		},
 		0x86: {
+			name:     "STX",
 			cycles:   3,
 			handler:  c.stx,
 			addrMode: ZeroPage,
 		},
 		0x96: {
+			name:     "STX",
 			cycles:   4,
 			handler:  c.stx,
 			addrMode: ZeroPageY,
@@ -134,16 +137,19 @@ func (c *CPU) initLoad() {
 
 		// STY
 		0x8C: {
+			name:     "STY",
 			cycles:   4,
 			handler:  c.sty,
 			addrMode: Absolute,
 		},
 		0x84: {
+			name:     "STY",
 			cycles:   3,
 			handler:  c.sty,
 			addrMode: ZeroPage,
 		},
 		0x94: {
+			name:     "STY",
 			cycles:   4,
 			handler:  c.sty,
 			addrMode: ZeroPageX,
@@ -157,31 +163,37 @@ func (c *CPU) initLoad() {
 			addrMode: Absolute,
 		},
 		0x9D: {
+			name:     "STA",
 			cycles:   5,
 			handler:  c.sta,
 			addrMode: AbsoluteX,
 		},
 		0x99: {
+			name:     "STA",
 			cycles:   5,
 			handler:  c.sta,
 			addrMode: AbsoluteY,
 		},
 		0x85: {
+			name:     "STA",
 			cycles:   3,
 			handler:  c.sta,
 			addrMode: ZeroPage,
 		},
 		0x95: {
+			name:     "STA",
 			cycles:   4,
 			handler:  c.sta,
 			addrMode: ZeroPageX,
 		},
 		0x81: {
+			name:     "STA",
 			cycles:   6,
 			handler:  c.sta,
 			addrMode: XIndirect,
 		},
 		0x91: {
+			name:     "STA",
 			cycles:   6,
 			handler:  c.sta,
 			addrMode: IndirectY,

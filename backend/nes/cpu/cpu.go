@@ -1,12 +1,12 @@
 package cpu
 
 import (
-	"Nes/bus"
-	"Nes/log"
 	"fmt"
+	"github.com/carlmango11/nes/backend/nes/bus"
+	"github.com/carlmango11/nes/backend/nes/log"
 )
 
-const ClockSpeedHz = 1 //1660000
+const ClockSpeedHz = 1660000
 
 const (
 	VectorNMI   = 0xFFFA
@@ -151,7 +151,7 @@ func (c *CPU) PrintState() {
 		c.flagSet(FlagI), c.flagSet(FlagZ), c.flagSet(FlagC))
 }
 
-func (c *CPU) Exec() {
+func (c *CPU) Tick() {
 	log.Debugf(">> executing at %x", c.pc)
 
 	code := c.read()
@@ -165,6 +165,7 @@ func (c *CPU) Exec() {
 
 	if instr.flagChange != nil {
 		c.execFlagChange(instr.flagChange)
+		c.PrintState()
 		return
 	}
 
@@ -298,8 +299,6 @@ func (c *CPU) execIndirect(f addrHandler) {
 	loAddr := toAddr(hi, lo)
 	hiAddr := toAddr(hi, lo+1) // add 1 to lo because we shouldn't cross page boundary
 
-	log.Printf("OMG %x %v / %x %v", loAddr, loAddr, hiAddr, hiAddr)
-
 	targetLo := c.bus.Read(loAddr)
 	targetHi := c.bus.Read(hiAddr)
 
@@ -360,9 +359,13 @@ func (c *CPU) execRelative(cond condition) {
 	var cycles int
 
 	if cond() {
-		c.pc = uint16(int16(c.pc) + int16(offset))
+		newPC := uint16(int16(c.pc) + int16(offset))
+		log.Debugf("branching to %x", newPC)
+
+		c.pc = newPC
 		cycles = 1
 	} else {
+		log.Debugf("not branching")
 		cycles = 2
 	}
 
@@ -377,6 +380,8 @@ func (c *CPU) execAbsoluteAddr(f addrHandler) {
 func (c *CPU) execAbsoluteGeneric(f handler, addition byte) {
 	addr := c.readAddr()
 	addr += uint16(addition)
+
+	log.Debugf("read absolute: %x", addr)
 
 	newVal, write := f(c.bus.Read(addr))
 

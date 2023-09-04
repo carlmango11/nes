@@ -1,14 +1,16 @@
 package main
 
 import (
-	"Nes/nes"
-	"Nes/rom"
+	"github.com/carlmango11/nes/backend/nes"
+	"github.com/carlmango11/nes/backend/nes/rom"
 	"io"
 	"os"
 )
 
 func main() {
-	f, err := os.Open("/Users/carl/IdeaProjects/Nes/roms/mario3.nes")
+	//log.Debug = false
+
+	f, err := os.Open("/Users/carl/IdeaProjects/Nes/backend/wasm/roms/color_test.nes")
 	if err != nil {
 		panic(err)
 	}

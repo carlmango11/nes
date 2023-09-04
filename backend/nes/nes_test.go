@@ -1,6 +1,7 @@
 package nes
 
 import (
+	"Nes/bus"
 	"Nes/cpu"
 	"Nes/log"
 	"Nes/ram"
@@ -62,7 +63,7 @@ func TestCPU(t *testing.T) {
 			continue
 		}
 
-		if !cpu.New(nil, 0).HasOpCode(code[0]) {
+		if !cpu.New(bus.New(nil)).HasOpCode(code[0]) {
 			continue
 		}
 
@@ -107,11 +108,11 @@ func runSuite(t *testing.T, fileName string, code byte) {
 
 func runTest(t *testing.T, test TestCase) {
 	r := ram.New()
-	c := cpu.New(r, 0)
+	c := cpu.New(bus.New(nil))
 
 	c.LoadState(test.Initial)
 
-	c.Exec()
+	c.Tick()
 
 	s := c.State()
 

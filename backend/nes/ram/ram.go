@@ -1,8 +1,6 @@
 package ram
 
-import (
-	"Nes/log"
-)
+import "github.com/carlmango11/nes/backend/nes/log"
 
 const size = 100000
 

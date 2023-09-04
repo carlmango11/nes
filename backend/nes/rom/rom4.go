@@ -1,8 +1,8 @@
 package rom
 
 import (
-	"Nes/log"
 	"fmt"
+	"github.com/carlmango11/nes/backend/nes/log"
 )
 
 // CPU $6000-$7FFF: 8 KB PRG RAM bank (optional)
@@ -21,17 +21,16 @@ type ROM4 struct {
 	data *romData
 }
 
-type Metadata struct {
-	prgSize byte
-	chrSize byte
-}
-
 func newROM4(data *romData) *ROM4 {
 	log.Debugf("banks prg: %v", len(data.prg))
 
 	return &ROM4{
 		data: data,
 	}
+}
+
+func (r *ROM4) Write(addr uint16, val byte) {
+	panic("cannot write to rom")
 }
 
 func (r *ROM4) Read(addr uint16) byte {
@@ -43,7 +42,7 @@ func (r *ROM4) Read(addr uint16) byte {
 		translated := addr - 0xE000
 		val := r.data.prg[len(r.data.prg)-1][translated]
 
-		log.Debugf("reading last bank: %x (=> %x): %x", addr, translated, val)
+		//log.Debugf("reading last bank: %x (=> %x): %x", addr, translated, val)
 
 		return val
 	}

@@ -4,6 +4,7 @@ func (c *CPU) initFlags() {
 	instrs := map[byte]Instr{
 		// Flags
 		0x18: {
+			name:   "CLC",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagC,
@@ -11,6 +12,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0x38: {
+			name:   "SEC",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagC,
@@ -18,6 +20,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0x58: {
+			name:   "CLI",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagI,
@@ -25,6 +28,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0x78: {
+			name:   "SEI",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagI,
@@ -32,6 +36,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0xB8: {
+			name:   "CLV",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagV,
@@ -47,6 +52,7 @@ func (c *CPU) initFlags() {
 			},
 		},
 		0xF8: {
+			name:   "SED",
 			cycles: 2,
 			flagChange: &flagChange{
 				flag: FlagD,
