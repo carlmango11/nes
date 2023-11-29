@@ -8,6 +8,8 @@ import (
 type ROM3 struct {
 	prg  []byte
 	data *romData
+
+	chrBank byte
 }
 
 func newROM3(data *romData) *ROM3 {
@@ -26,6 +28,12 @@ func newROM3(data *romData) *ROM3 {
 }
 
 func (r *ROM3) Write(addr uint16, val byte) {
+	if addr >= 0x8000 {
+		// bank switch
+		r.chrBank = val & 0x11
+		return
+	}
+
 	panic(fmt.Sprintf("cannot write to rom: %x %x", addr, val))
 }
 

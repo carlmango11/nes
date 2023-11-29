@@ -2,15 +2,16 @@ package main
 
 import (
 	"github.com/carlmango11/nes/backend/nes"
+	"github.com/carlmango11/nes/backend/nes/log"
 	"github.com/carlmango11/nes/backend/nes/rom"
 	"io"
 	"os"
 )
 
 func main() {
-	//log.Debug = false
+	log.Debug = false
 
-	f, err := os.Open("/Users/carl/IdeaProjects/Nes/backend/wasm/roms/color_test.nes")
+	f, err := os.Open("/Users/carl/IdeaProjects/Nes/backend/wasm/roms/donkey.nes")
 	if err != nil {
 		panic(err)
 	}

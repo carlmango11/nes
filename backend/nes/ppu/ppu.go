@@ -3,7 +3,6 @@ package ppu
 import (
 	"fmt"
 	"github.com/carlmango11/nes/backend/nes/log"
-	"log/slog"
 	"sync"
 )
 
@@ -28,9 +27,14 @@ const (
 	PPUDATA   = 7
 )
 
-type PPU struct {
-	log slog.Logger
+var baseNametables = map[byte]uint16{
+	0: 0x2000,
+	1: 0x2400,
+	2: 0x2800,
+	3: 0x2C00,
+}
 
+type PPU struct {
 	stateMu sync.Mutex
 	state   [240][256]byte
 
@@ -46,129 +50,252 @@ type PPU struct {
 
 	registers        [8]byte
 	verticalBlankNMI bool
+
+	written bool
 }
 
 func New() *PPU {
+	var state [240][256]byte
+	for i := range state {
+		for j := range state[i] {
+			state[i][j] = 1
+		}
+	}
+
 	return &PPU{
-		line: -1,
+		line:  -1,
+		state: state,
+		data:  make([]byte, 16*1024),
 	}
 }
 
-func (r *PPU) State() [240][256]byte {
-	r.stateMu.Lock()
-	defer r.stateMu.Unlock()
+func (p *PPU) State() [240][256]byte {
+	p.stateMu.Lock()
+	defer p.stateMu.Unlock()
 
-	return r.state
+	return p.state
 }
 
-func (r *PPU) Tick() {
-	//log.Debugf("PPU (%v, %v)", r.pixel, r.line)
+func (p *PPU) Tick() bool {
+	var interrupt bool
+
+	//log.Printf("PPU (%v, %v)", p.pixel, p.line)
 
 	switch {
-	case r.line == -1:
-		r.preRenderScanline()
-	case r.line == 0:
-	case r.line >= 241 && r.line <= 260:
-		if r.pixel == 1 {
-			r.setVBlank()
+	case p.line == -1:
+		p.preRenderScanline()
+	case p.line == 0:
+		//case r.line >= 1 && r.line <= 240:
+		p.renderScanLine()
+	case p.line == 1:
+		p.renderFrame()
+	case p.line >= 241 && p.line <= 260:
+		if p.pixel == 1 {
+			p.setVBlank()
+
+			if p.getBit(PPUCTRL, 7) == 1 {
+				interrupt = true
+			}
 		}
 	}
 
-	r.pixel++
-	if r.pixel == 341 {
-		r.pixel = 0
+	p.pixel++
+	if p.pixel == 341 {
+		p.pixel = 0
 
-		r.line++
-		if r.line == 260 {
-			r.line = 0
+		p.line++
+		if p.line == 260 {
+			p.line = 0
 		}
 	}
+
+	return interrupt
 }
 
-func (r *PPU) Read(addr uint16) byte {
+func (p *PPU) Read(addr uint16) byte {
 	if addr >= 0x2000 && addr <= 0x3FFF {
-		return r.readRegister(addr % 8)
+		return p.readRegister(addr % 8)
 	}
 
 	panic(fmt.Sprintf("ppu: invalid address %x", addr))
 }
 
-func (r *PPU) Write(addr uint16, val byte) {
+func (p *PPU) Write(addr uint16, val byte) {
 	if addr >= 0x2000 && addr <= 0x3FFF {
-		r.writeRegister(addr%8, val)
+		p.writeRegister(addr%8, val)
+		return
 	}
 
 	panic(fmt.Sprintf("ppu: invalid address %x", addr))
 }
 
-func (r *PPU) readRegister(addr uint16) byte {
-	if addr == PPUSTATUS {
+func (p *PPU) readRegister(addr uint16) byte {
+	switch addr {
+	case PPUSTATUS:
 		// reset some statuses
-		r.verticalBlankNMI = false
-		r.hiWritten = false
+		p.verticalBlankNMI = false
+		p.hiWritten = false
+	case PPUDATA:
+		return p.readPPUDATA()
 	}
 
-	return r.registers[addr]
+	return p.registers[addr]
 }
 
-func (r *PPU) writeRegister(addr uint16, val byte) {
-	r.registers[addr] = val
+func (p *PPU) writeRegister(addr uint16, val byte) {
+	p.registers[addr] = val
+
+	//log.Printf("ppu: writing %x to %x", val, addr)
 
 	switch addr {
 	case PPUCTRL:
-		r.writePPUCTRL(val)
+		p.writePPUCTRL(val)
 	case PPUSCROLL:
 		panic("no scroll")
 	case PPUADDR:
-		r.writePPUADDR(val)
+		p.writePPUADDR(val)
 	case PPUDATA:
-		r.writePPUDATA(val)
+		p.writePPUDATA(val)
 	}
 }
 
-func (r *PPU) writePPUADDR(val byte) {
-	if r.hiWritten {
-		r.vramAddr = uint16(val) << 8
-		r.hiWritten = true
+func (p *PPU) writePPUADDR(val byte) {
+	if !p.hiWritten {
+		p.vramAddr = uint16(val) << 8
+		p.hiWritten = true
 	} else {
-		r.vramAddr |= uint16(val)
+		p.vramAddr |= uint16(val)
 	}
 }
 
-func (r *PPU) readPPUDATA() byte {
-	val := r.vramRead
-	r.vramRead = r.data[r.vramAddr]
+func (p *PPU) readPPUDATA() byte {
+	val := p.vramRead
+	p.vramRead = p.data[p.vramAddr]
 
-	inc := uint16(1)
-	if r.getBit(PPUCTRL, 2) == 1 {
-		inc = 32
-	}
-
-	r.vramAddr += inc
+	p.incVramAddr()
 
 	return val
 }
 
-func (r *PPU) writePPUDATA(val byte) {
-	r.data[r.vramAddr] = val
+func (p *PPU) incVramAddr() {
+	if p.getBit(PPUCTRL, 2) == 1 {
+		p.vramAddr += 32
+	} else {
+		p.vramAddr += 1
+	}
 }
 
-func (r *PPU) writePPUCTRL(val byte) {
-	r.verticalBlankNMI = (val >> 7) == 1
+func (p *PPU) writePPUDATA(val byte) {
+	log.Printf("writing %x to vram at %x", val, p.vramAddr)
+	p.data[p.vramAddr] = val
+	p.incVramAddr()
 }
 
-func (r *PPU) setVBlank() {
+func (p *PPU) writePPUCTRL(val byte) {
+	p.verticalBlankNMI = (val >> 7) == 1
+}
+
+func (p *PPU) setVBlank() {
 	log.Debugf("PPU: setting vblank")
-	r.setBit(PPUSTATUS, 7, 1)
+	p.setBit(PPUSTATUS, 7, 1)
 }
 
-func (r *PPU) preRenderScanline() {
+func (p *PPU) renderFrame() {
+	if p.enableBackground() {
+		p.renderBackground()
+
+		if !p.written {
+			p.written = true
+			p.draw()
+		}
+	}
 }
 
-func (r *PPU) setBit(register, bit, val byte) {
-	r.registers[register] = r.registers[register] | (val << bit)
+func (p *PPU) renderScanLine() {
 }
 
-func (r *PPU) getBit(register, bit byte) byte {
-	r.registers[register] = r.registers[register] | (val << bit)
+func (p *PPU) preRenderScanline() {
+}
+
+func (p *PPU) setBit(register, bit, val byte) {
+	p.registers[register] = p.registers[register] | (val << bit)
+}
+
+func (p *PPU) getBit(register, bit byte) byte {
+	return p.registers[register] >> bit & 1
+}
+
+func (p *PPU) renderBackground() {
+	i := baseNametables[p.registers[PPUCTRL]&0x3]
+
+	for y := 0; y < 0x1D; y++ {
+		for x := 0; x < 0x1F; x++ {
+			p.renderBackgroundTile(x, y, i)
+			i++
+		}
+	}
+}
+
+func (p *PPU) enableBackground() bool {
+	return p.getBit(PPUMASK, 3) == 1
+}
+
+func (p *PPU) getPatternBase() uint16 {
+	if p.getBit(PPUCTRL, 4) == 0 {
+		return 0
+	}
+
+	return 0x100
+}
+
+func (p *PPU) renderBackgroundTile(x int, y int, addr uint16) {
+	patternAddr := p.getPatternBase() + (uint16(p.data[addr]) * 16)
+
+	var p1, p2 [8]byte
+
+	for i := patternAddr; i < patternAddr+8; i++ {
+		p1[i] = p.data[patternAddr]
+	}
+
+	for i := patternAddr + 8; i < patternAddr+16; i++ {
+		p2[i] = p.data[patternAddr]
+	}
+
+	for i := 0; i < 8; i++ {
+		p.processBackgroundLine(x, y, i, p1[i], p2[i])
+	}
+}
+
+func (p *PPU) processBackgroundLine(x int, y int, line int, byte1 byte, byte2 byte) {
+	for i := 0; i < 8; i++ {
+		bit1 := (byte1 >> i) & 1
+		bit2 := (byte2 >> i) & 1
+
+		val := calcVal(bit1, bit2)
+
+		pixelX := (x * 8) + (8 - i)
+		pixelY := (y * 8) + line
+
+		p.state[pixelX][pixelY] = val
+	}
+}
+
+func (p *PPU) draw() {
+	log.Printf("%v", p.state)
+}
+
+func calcVal(b1, b2 byte) byte {
+	if b1 == b2 {
+		if b1 == 0 {
+			return 0
+		}
+
+		return 3
+	}
+
+	if b1 == 1 {
+		return 1
+	}
+
+	return 2
 }

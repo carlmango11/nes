@@ -26,22 +26,25 @@ func createBindings() {
 	log.Debug = false
 
 	n = nes.New(getROM())
-	//go n.Run()
+	go n.Run()
 
 	getDisplayFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
 		if n == nil {
-			return nil
+			return 1
 		}
 
-		// doesn't support normal typed arrays, only interface{}
-		var result [][]interface{}
-		for _, x := range n.Display() {
-			var row []interface{}
-			for _, y := range x {
-				row = append(row, y)
-			}
+		display := n.Display()
 
-			result = append(result, row)
+		height := len(display)
+		width := len(display[0])
+
+		result := make([]any, height*width)
+
+		// doesn't support normal 2D typed arrays, only []any
+		for x := range display {
+			for y := range display[x] {
+				result[y+(x*width)] = display[x][y]
+			}
 		}
 
 		return result

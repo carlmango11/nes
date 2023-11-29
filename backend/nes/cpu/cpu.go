@@ -116,6 +116,13 @@ func (c *CPU) initInstrs() {
 	c.initNop()
 }
 
+func (c *CPU) Interrupt() {
+	c.pushAddr(c.pc)
+	c.pushStack(c.p)
+
+	c.pc = VectorNMI
+}
+
 func (c *CPU) HasOpCode(opCode byte) bool {
 	_, ok := c.opCodes[opCode]
 	return ok

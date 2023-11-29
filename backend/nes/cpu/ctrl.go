@@ -1,9 +1,5 @@
 package cpu
 
-import (
-	"fmt"
-)
-
 func (c *CPU) initCtrl() {
 	instrs := map[byte]Instr{
 		0x00: {
@@ -64,7 +60,6 @@ func (c *CPU) rti() {
 }
 
 func (c *CPU) jmp(addr uint16) {
-	fmt.Printf("\nJMP to %x", addr)
 	c.pc = addr
 	// TODO: do I need to implement the weird behaviour around end of page?
 }

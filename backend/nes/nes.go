@@ -27,13 +27,17 @@ func New(rom rom.ROM) *NES {
 func (n *NES) Run() {
 	for range time.Tick(time.Second / cpu.ClockSpeedHz) {
 		n.Tick()
-		//time.Sleep(time.Second)
+		//time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (n *NES) Tick() {
 	if n.tick%4 == 0 {
-		n.ppu.Tick()
+		interrupt := n.ppu.Tick()
+
+		if interrupt {
+			n.cpu.Interrupt()
+		}
 	}
 	if n.tick%12 == 0 {
 		n.cpu.Tick()
