@@ -5,6 +5,7 @@ import (
 	"github.com/carlmango11/nes/backend/nes/cpu"
 	"github.com/carlmango11/nes/backend/nes/ppu"
 	"github.com/carlmango11/nes/backend/nes/rom"
+	"log"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type NES struct {
 }
 
 func New(rom rom.ROM) *NES {
-	p := ppu.New()
+	p := ppu.New(rom)
 	b := bus.New(rom, p)
 
 	return &NES{
@@ -25,9 +26,18 @@ func New(rom rom.ROM) *NES {
 }
 
 func (n *NES) Run() {
-	for range time.Tick(time.Second / cpu.ClockSpeedHz) {
+	var i int64
+	//for range time.Tick(time.Second / cpu.ClockSpeedHz) {
+	for {
 		n.Tick()
-		//time.Sleep(100 * time.Millisecond)
+
+		//log.Println("small tick")
+		i++
+		if i%(1660000) == 0 {
+			log.Println("tick", i)
+			i = 0
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 }
 

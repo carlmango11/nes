@@ -21,9 +21,9 @@ type Joypad struct {
 }
 
 type Input struct {
-	register byte
-	joypad1  *Joypad
-	joypad2  *Joypad
+	//register byte
+	joypad1 *Joypad
+	joypad2 *Joypad
 }
 
 func New() *Input {
@@ -52,8 +52,11 @@ func (i *Input) Read(addr uint16) byte {
 
 func (i *Input) Write(addr uint16, val byte) {
 	if addr == 0x4016 {
-		panic("omg")
-		i.register = val
+		i.joypad1.next = 0
+		i.joypad2.next = 0
+		//panic("omg")
+		//i.register = val
+		return
 	}
 
 	panic(fmt.Sprintf("input: unhandled address %x (%x)", addr, val))
@@ -63,6 +66,9 @@ func (i *Input) readJoypad(jp *Joypad) byte {
 	val := jp.buttons[jp.next]
 
 	jp.next++
+	if jp.next == 8 {
+		jp.next = 0
+	}
 
 	return val
 }

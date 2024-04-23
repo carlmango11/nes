@@ -28,13 +28,20 @@ type Bus struct {
 	ram   *ram.RAM
 	rom   rom.ROM
 	ppu   *ppu.PPU
+	dma   *DMA
 	input *input.Input
 }
 
 func New(rom rom.ROM, ppu *ppu.PPU) *Bus {
+	r := ram.New()
+
 	return &Bus{
-		apu:   apu.New(),
-		ram:   ram.New(),
+		apu: apu.New(),
+		ram: r,
+		dma: &DMA{
+			ram: r,
+			ppu: ppu,
+		},
 		rom:   rom,
 		ppu:   ppu,
 		input: input.New(),
@@ -63,9 +70,9 @@ func (b *Bus) getReadComponent(addr uint16) readComponent {
 		panic(fmt.Sprintf("bus: read from invalid address %x", addr))
 	case addr <= 0x3FFF:
 		return b.ppu
-	case addr >= 0x4000 && addr <= 0x4015:
+	case addr <= 0x4015:
 		return b.apu
-	case addr >= 0x4016 && addr <= 0x4017:
+	case addr <= 0x4017:
 		return b.input
 	case addr < 0x8000:
 		panic(fmt.Sprintf("bus: read from unhandled address %x", addr))
@@ -86,6 +93,8 @@ func (b *Bus) getWriteComponent(addr uint16) writeComponent {
 		panic(fmt.Sprintf("bus: write to invalid address %x", addr))
 	case addr <= 0x3FFF:
 		return b.ppu
+	case addr == 0x4014:
+		return b.dma
 	case addr <= 0x4015:
 		return b.apu
 	case addr == 0x4016:

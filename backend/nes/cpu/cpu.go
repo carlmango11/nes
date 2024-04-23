@@ -94,10 +94,7 @@ func New(bus *bus.Bus) *CPU {
 	}
 
 	c.initInstrs()
-
-	lo := c.bus.Read(VectorReset)
-	hi := c.bus.Read(VectorReset + 1)
-	c.pc = toAddr(hi, lo)
+	c.vectorToPC(VectorReset)
 
 	return c
 }
@@ -120,7 +117,7 @@ func (c *CPU) Interrupt() {
 	c.pushAddr(c.pc)
 	c.pushStack(c.p)
 
-	c.pc = VectorNMI
+	c.vectorToPC(VectorNMI)
 }
 
 func (c *CPU) HasOpCode(opCode byte) bool {
@@ -225,6 +222,12 @@ func (c *CPU) Tick() {
 	c.c++
 
 	c.PrintState()
+}
+
+func (c *CPU) vectorToPC(vector uint16) {
+	lo := c.bus.Read(vector)
+	hi := c.bus.Read(vector + 1)
+	c.pc = toAddr(hi, lo)
 }
 
 func (c *CPU) addCycles(count int) {

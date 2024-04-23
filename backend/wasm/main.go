@@ -41,9 +41,12 @@ func createBindings() {
 		result := make([]any, height*width)
 
 		// doesn't support normal 2D typed arrays, only []any
-		for x := range display {
-			for y := range display[x] {
-				result[y+(x*width)] = display[x][y]
+		for y := range display {
+			for x := range display[y] {
+				if display[y][x] > 0 {
+					log.Printf("OMG zero zero %v", display[y][x])
+				}
+				result[x+(y*width)] = display[y][x]
 			}
 		}
 
@@ -54,10 +57,14 @@ func createBindings() {
 }
 
 func getROM() rom.ROM {
-	f, err := roms.Open("roms/donkey.nes")
+	const romName = "roms/donkey.nes"
+
+	f, err := roms.Open(romName)
 	if err != nil {
 		panic(err)
 	}
+
+	log.Printf("loaded: %v", romName)
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {

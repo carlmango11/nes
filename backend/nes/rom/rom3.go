@@ -13,8 +13,8 @@ type ROM3 struct {
 }
 
 func newROM3(data *romData) *ROM3 {
-	log.Debugf("banks prg: %v", len(data.prg))
-	log.Debugf("banks chr: %v", len(data.chr))
+	log.Printf("banks prg: %v", len(data.prg))
+	log.Printf("banks chr: %v", len(data.chr))
 
 	var prg []byte
 	for _, x := range data.prg {
@@ -31,6 +31,7 @@ func (r *ROM3) Write(addr uint16, val byte) {
 	if addr >= 0x8000 {
 		// bank switch
 		r.chrBank = val & 0x11
+		log.Printf("Bank : %v", r.chrBank)
 		return
 	}
 
@@ -39,6 +40,8 @@ func (r *ROM3) Write(addr uint16, val byte) {
 
 func (r *ROM3) Read(addr uint16) byte {
 	switch {
+	case addr < 0x2000:
+		return r.data.chr[r.chrBank][addr]
 	case addr < 0x8000:
 		panic(fmt.Sprintf("rom3: unhandler addr: %v", addr))
 	case addr < 0xFFFF:
