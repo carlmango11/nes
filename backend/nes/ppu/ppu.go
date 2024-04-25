@@ -221,9 +221,9 @@ func (p *PPU) setVBlank() {
 }
 
 func (p *PPU) renderFrame() {
-	if p.enableBackground() {
-		p.renderBackground()
-	}
+	//if p.enableBackground() {
+	//	p.renderBackground()
+	//}
 
 	if p.enableSprites() {
 		p.renderSprites()
@@ -331,16 +331,21 @@ func (p *PPU) renderSprite(sprite []byte) {
 		patternTable = 0x1000
 	}
 
-	y := sprite[0] + 1 // it's offset by 1
+	y := sprite[0] //+ 1 // it's offset by 1
 	x := sprite[3]
+
+	if y >= 240 {
+		// hidden
+		return
+	}
 
 	//attr := sprite[2]
 
 	tileIndex := uint16(sprite[1])
-	tileOffset := tileIndex * 8
+	tileOffset := tileIndex * 16
 	tileAddr := patternTable + tileOffset
 
-	log.Printf("sprite: %v (addr: %v)", sprite, tileAddr)
+	//log.Printf("sprite: %v (addr: %x)", sprite, tileAddr)
 
 	for i := uint16(0); i < 8; i++ {
 		p0 := p.readPatternTable(tileAddr + i)
@@ -355,11 +360,6 @@ func (p *PPU) readPatternTable(addr uint16) byte {
 }
 
 func (p *PPU) drawSpriteLine(x, y, p0, p1 byte) {
-	if y >= 240 {
-		// hidden
-		return
-	}
-
 	for i := byte(0); i < 8; i++ {
 		b0 := p0 & 0x1
 		b1 := p1 & 0x1

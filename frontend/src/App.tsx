@@ -2,8 +2,8 @@ import {useEffect} from 'react'
 import "./wasm_exec.js";
 
 const FPS = 20;
-const HEIGHT = 200;
-const WIDTH = 240;
+const HEIGHT = 240;
+const WIDTH = 256;
 const PIXEL_SIZE = 3;
 
 function initWasm() {
@@ -38,9 +38,6 @@ function renderDisplay(ctx: CanvasRenderingContext2D) {
         for (let x = 0; x < WIDTH; x++) {
             const i = x + (y * WIDTH);
             const v: number = state[i];
-            if (v !== 0) {
-                console.log("OMG " + v);
-            }
 
             ctx.fillStyle = getColour(v);
             ctx.fillRect(x*PIXEL_SIZE, y*PIXEL_SIZE, 1+PIXEL_SIZE, 1+PIXEL_SIZE);

@@ -43,9 +43,6 @@ func createBindings() {
 		// doesn't support normal 2D typed arrays, only []any
 		for y := range display {
 			for x := range display[y] {
-				if display[y][x] > 0 {
-					log.Printf("OMG zero zero %v", display[y][x])
-				}
 				result[x+(y*width)] = display[y][x]
 			}
 		}
